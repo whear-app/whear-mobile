@@ -15,7 +15,7 @@ import { UpgradeScreen } from '../screens/subscription/UpgradeScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
-export const MainStack: React.FC = () => {
+const MainStack: React.FC = () => {
   return (
     <Stack.Navigator
       screenOptions={{
@@ -35,6 +35,10 @@ export const MainStack: React.FC = () => {
     </Stack.Navigator>
   );
 };
+
+MainStack.displayName = 'MainStack';
+
+export { MainStack };
 
 
 

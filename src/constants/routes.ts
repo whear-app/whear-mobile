@@ -34,6 +34,7 @@ export const ROUTES = {
 } as const;
 
 export const TAB_ROUTES = {
+  HOME: 'HomeTab',
   CLOSET: 'ClosetTab',
   OUTFIT: 'OutfitTab',
   PROFILE: 'ProfileTab',

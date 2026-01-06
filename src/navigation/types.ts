@@ -11,6 +11,7 @@ export type AuthStackParamList = {
 };
 
 export type MainTabParamList = {
+  [TAB_ROUTES.HOME]: undefined;
   [TAB_ROUTES.CLOSET]: undefined;
   [TAB_ROUTES.OUTFIT]: undefined;
   [TAB_ROUTES.PROFILE]: undefined;
