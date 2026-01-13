@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { View, StyleSheet, Dimensions, TouchableOpacity, Platform } from 'react-native';
+import { View, StyleSheet, Dimensions, TouchableOpacity, Platform, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,7 +11,6 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppText } from '../../components/AppText';
 import { SwipeableCard } from '../../components/SwipeableCard';
-import { ArcCarousel } from '../../components/ArcCarousel';
 import { MainStackParamList } from '../../navigation/types';
 import { ROUTES } from '../../constants/routes';
 import { useTodayCollectionStore } from '../../stores/todayCollectionStore';
@@ -109,7 +108,7 @@ const mockOutfits: OutfitSuggestion[] = [
   },
   {
     id: '9',
-    imageUri: img('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&auto=format&fit=crop'),
+    imageUri: img('https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&auto=format&fit=crop'),
     title: 'Weekend Vibes',
     subtitle: 'relaxed comfort',
     handle: '@weekend.mode',
@@ -127,7 +126,7 @@ const mockOutfits: OutfitSuggestion[] = [
   },
   {
     id: '11',
-    imageUri: img('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&auto=format&fit=crop'),
+    imageUri: img('https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=1200&auto=format&fit=crop'),
     title: 'Bohemian Flow',
     subtitle: 'free spirit',
     handle: '@boho.life',
@@ -136,7 +135,7 @@ const mockOutfits: OutfitSuggestion[] = [
   },
   {
     id: '12',
-    imageUri: img('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&auto=format&fit=crop'),
+    imageUri: img('https://images.unsplash.com/photo-1506629905607-2c8c0a5c0a8a?w=1200&auto=format&fit=crop'),
     title: 'Classic Tailored',
     subtitle: 'timeless elegance',
     handle: '@classic.cut',
@@ -145,7 +144,7 @@ const mockOutfits: OutfitSuggestion[] = [
   },
   {
     id: '13',
-    imageUri: img('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&auto=format&fit=crop'),
+    imageUri: img('https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1200&auto=format&fit=crop'),
     title: 'Urban Explorer',
     subtitle: 'city wanderer',
     handle: '@urban.walk',
@@ -154,7 +153,7 @@ const mockOutfits: OutfitSuggestion[] = [
   },
   {
     id: '14',
-    imageUri: img('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&auto=format&fit=crop'),
+    imageUri: img('https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1200&auto=format&fit=crop'),
     title: 'Romantic Blush',
     subtitle: 'soft femininity',
     handle: '@romance.edit',
@@ -163,7 +162,7 @@ const mockOutfits: OutfitSuggestion[] = [
   },
   {
     id: '15',
-    imageUri: img('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&auto=format&fit=crop'),
+    imageUri: img('https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=1200&auto=format&fit=crop'),
     title: 'Monochrome Magic',
     subtitle: 'black & white',
     handle: '@mono.studio',
@@ -180,9 +179,12 @@ const HomeScreen: React.FC = () => {
   const [outfits, setOutfits] = useState<OutfitSuggestion[]>(mockOutfits);
   const [activeIndex, setActiveIndex] = useState(0);
   const [history, setHistory] = useState<Array<{ item: OutfitSuggestion; index: number; action: 'left' | 'right' }>>([]);
+  const [likeZoneOpacity, setLikeZoneOpacity] = useState(0);
+  const [nopeZoneOpacity, setNopeZoneOpacity] = useState(0);
   
   const isSwipingRef = useRef(false);
   const swipeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const swipeProgressRef = useRef(0);
 
   // Prefetch images asynchronously
   useEffect(() => {
@@ -240,25 +242,26 @@ const HomeScreen: React.FC = () => {
     // Remove from main list and update activeIndex
     setOutfits((prev) => {
       const newList = prev.filter((o) => o.id !== current.id);
-      // Adjust activeIndex if needed
-      if (currentIndex >= newList.length && newList.length > 0) {
-        setActiveIndex(Math.max(0, newList.length - 1));
-      } else if (newList.length === 0) {
+      // Adjust activeIndex immediately
+      if (newList.length === 0) {
         setActiveIndex(0);
+      } else if (currentIndex === 0) {
+        // If removing first item, stay at index 0 (which will be the new first item)
+        setActiveIndex(0);
+      } else if (currentIndex >= newList.length) {
+        // If removing last item, move to new last
+        setActiveIndex(newList.length - 1);
+      } else {
+        // If removing middle item, stay at same index (which will be the next item)
+        setActiveIndex(currentIndex);
       }
       return newList;
     });
     
-    // Move to next card (or stay if no more cards)
-    if (currentIndex >= outfits.length - 1) {
-      // If this was the last card, stay at current index (which will be the new last)
-      setTimeout(() => {
-        isSwipingRef.current = false;
-      }, 350);
-    } else {
-      // If not last, move to next (which will be at same index after removal)
-      goNext();
-    }
+    // Reset swiping flag after animation
+    setTimeout(() => {
+      isSwipingRef.current = false;
+    }, 350);
   }, [activeIndex, outfits, goNext, addRejected]);
 
   // Fixed onRight - remove from list and add to accepted collection
@@ -281,25 +284,26 @@ const HomeScreen: React.FC = () => {
     // Remove from main list and update activeIndex
     setOutfits((prev) => {
       const newList = prev.filter((o) => o.id !== current.id);
-      // Adjust activeIndex if needed
-      if (currentIndex >= newList.length && newList.length > 0) {
-        setActiveIndex(Math.max(0, newList.length - 1));
-      } else if (newList.length === 0) {
+      // Adjust activeIndex immediately
+      if (newList.length === 0) {
         setActiveIndex(0);
+      } else if (currentIndex === 0) {
+        // If removing first item, stay at index 0 (which will be the new first item)
+        setActiveIndex(0);
+      } else if (currentIndex >= newList.length) {
+        // If removing last item, move to new last
+        setActiveIndex(newList.length - 1);
+      } else {
+        // If removing middle item, stay at same index (which will be the next item)
+        setActiveIndex(currentIndex);
       }
       return newList;
     });
     
-    // Move to next card (or stay if no more cards)
-    if (currentIndex >= outfits.length - 1) {
-      // If this was the last card, stay at current index (which will be the new last)
-      setTimeout(() => {
-        isSwipingRef.current = false;
-      }, 350);
-    } else {
-      // If not last, move to next (which will be at same index after removal)
-      goNext();
-    }
+    // Reset swiping flag after animation
+    setTimeout(() => {
+      isSwipingRef.current = false;
+    }, 350);
   }, [activeIndex, outfits, goNext, addAccepted]);
 
   const undo = useCallback(() => {
@@ -325,34 +329,76 @@ const HomeScreen: React.FC = () => {
     });
 
     setHistory((prev) => prev.slice(0, -1));
+    // Set activeIndex to the restored item
     setActiveIndex(last.index);
+    // Reset swiping flag
+    isSwipingRef.current = false;
   }, [history, removeAccepted, removeRejected]);
 
   const next = useCallback(() => {
     navigation.navigate(ROUTES.COLLECTIONS);
   }, [navigation]);
 
-  // Handle arc carousel item press - ensure it updates the active card
-  const handleArcItemPress = useCallback((index: number) => {
-    if (index !== activeIndex && index >= 0 && index < outfits.length && !isSwipingRef.current) {
-      isSwipingRef.current = true;
-      setActiveIndex(index);
-      // Reset swiping flag after a short delay
-      setTimeout(() => {
-        isSwipingRef.current = false;
-      }, 200);
-    }
-  }, [activeIndex, outfits.length]);
-
-  // Only render active card + 1 next card for performance
-  // Use stable reference to prevent unnecessary re-renders
+  // Only render up to 7 cards in stack for performance
   const visibleCards = useMemo(
     () => {
-      const cards = outfits.slice(activeIndex, activeIndex + 2);
+      const maxCards = 7;
+      const cards = outfits.slice(activeIndex, activeIndex + maxCards);
       return cards;
     },
     [outfits, activeIndex]
   );
+
+  // Handle swipe progress to update zone opacity
+  const handleSwipeProgress = useCallback((dx: number) => {
+    const threshold = SCREEN_WIDTH * 0.25 * 0.5; // 50% of swipe threshold
+    const maxOpacity = 0.6;
+    swipeProgressRef.current = dx;
+    
+    if (dx > threshold) {
+      // Swiping right
+      const progress = (dx - threshold) / (SCREEN_WIDTH * 0.25 - threshold);
+      const zoneOpacity = Math.min(maxOpacity, progress * maxOpacity);
+      setLikeZoneOpacity(zoneOpacity);
+      setNopeZoneOpacity(0);
+    } else if (dx < -threshold) {
+      // Swiping left
+      const progress = (-dx - threshold) / (SCREEN_WIDTH * 0.25 - threshold);
+      const zoneOpacity = Math.min(maxOpacity, progress * maxOpacity);
+      setNopeZoneOpacity(zoneOpacity);
+      setLikeZoneOpacity(0);
+    } else {
+      setLikeZoneOpacity(0);
+      setNopeZoneOpacity(0);
+    }
+  }, []);
+
+  // Reset zone opacity when swipe ends
+  useEffect(() => {
+    if (!isSwipingRef.current) {
+      setLikeZoneOpacity(0);
+      setNopeZoneOpacity(0);
+    }
+  }, [activeIndex]);
+
+  // Reset list function - restore all items from collections
+  const resetList = useCallback(() => {
+    const { accepted, rejected } = useTodayCollectionStore.getState();
+    // Get all items from collections
+    const allItems = [...accepted, ...rejected];
+    // Reset collections
+    useTodayCollectionStore.getState().clearAll();
+    // Restore all items to main list (original order)
+    const restoredItems = [...allItems];
+    // Add any remaining mock items that weren't in collections
+    const remainingMockItems = mockOutfits.filter(
+      o => !allItems.find(item => item.id === o.id)
+    );
+    setOutfits([...restoredItems, ...remainingMockItems]);
+    setActiveIndex(0);
+    setHistory([]);
+    isSwipingRef.current = false;
+  }, []);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -371,6 +417,59 @@ const HomeScreen: React.FC = () => {
         end={{ x: 0.85, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
+
+      {/* Neon Zones - Rendered at screen level, above all cards - Full height, sát mép màn hình */}
+      {/* Neon Green Zone (Right - Like) - Ellipse from right edge - Full height, highest zIndex */}
+      <View
+        style={[
+          styles.neonZoneScreen,
+          styles.neonZoneRight,
+          {
+            opacity: likeZoneOpacity,
+          },
+        ]}
+        pointerEvents="none"
+      >
+        <LinearGradient
+          colors={['rgba(0, 255, 136, 0.4)', 'rgba(0, 255, 136, 0.2)', 'rgba(0, 255, 136, 0)']}
+          start={{ x: 1, y: 0.5 }}
+          end={{ x: 0, y: 0.5 }}
+          style={styles.neonZoneGradientRight}
+        >
+          <View style={styles.neonZoneContent}>
+            <Icon name="heart" size={56} color="#00FF88" />
+            <AppText overlay variant="h1" style={styles.neonZoneText}>
+              LIKE
+            </AppText>
+          </View>
+        </LinearGradient>
+      </View>
+
+      {/* Neon Red Zone (Left - Dislike) - Ellipse from left edge - Full height, highest zIndex */}
+      <View
+        style={[
+          styles.neonZoneScreen,
+          styles.neonZoneLeft,
+          {
+            opacity: nopeZoneOpacity,
+          },
+        ]}
+        pointerEvents="none"
+      >
+        <LinearGradient
+          colors={['rgba(255, 51, 102, 0.4)', 'rgba(255, 51, 102, 0.2)', 'rgba(255, 51, 102, 0)']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.neonZoneGradientLeft}
+        >
+          <View style={styles.neonZoneContent}>
+            <Icon name="close-circle" size={56} color="#FF3366" />
+            <AppText overlay variant="h1" style={styles.neonZoneText}>
+              PASS
+            </AppText>
+          </View>
+        </LinearGradient>
+      </View>
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
@@ -437,11 +536,14 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         )}
 
-        {/* Card Stack - Positioned to leave space for arc carousel */}
+        {/* Card Stack - Stack up to 7 cards */}
         {outfits.length > 0 ? (
           <View style={styles.cardZone} pointerEvents="box-none">
             {visibleCards.map((o, idx) => {
               const isActive = idx === 0;
+              // Stack effect: each card slightly offset and scaled
+              const stackOffset = idx * 4;
+              const stackScale = 1 - idx * 0.02;
               return (
                 <SwipeableCard
                   key={`${o.id}-${activeIndex + idx}`}
@@ -449,11 +551,13 @@ const HomeScreen: React.FC = () => {
                   isActive={isActive}
                   onSwipeLeft={onLeft}
                   onSwipeRight={onRight}
+                  onSwipeProgress={isActive ? handleSwipeProgress : undefined}
                   style={{
-                    zIndex: isActive ? 100 : 50,
+                    zIndex: 100 - idx, // Top card has highest zIndex
                     transform: [
-                      { translateX: idx * 6 - 6 },
-                      { translateY: idx * 6 },
+                      { translateX: stackOffset },
+                      { translateY: stackOffset },
+                      { scale: stackScale },
                     ],
                   }}
                 />
@@ -468,36 +572,50 @@ const HomeScreen: React.FC = () => {
             <AppText overlay muted variant="body" style={styles.emptySubtitle}>
               You've reviewed all outfits for today
             </AppText>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={next}
-              style={[styles.pill, { borderColor: colors.glassBorder, marginTop: 24 }]}
-            >
-              {Platform.OS === 'ios' ? (
-                <BlurView intensity={blur.medium} tint="light" style={[styles.pillInner, styles.pillNext]}>
-                  <AppText overlay variant="body" style={styles.pillNextText}>
-                    View Collections →
-                  </AppText>
-                </BlurView>
-              ) : (
-                <View style={[styles.pillInner, styles.pillAndroid, styles.pillNext]}>
-                  <AppText overlay variant="body" style={styles.pillNextText}>
-                    View Collections →
-                  </AppText>
-                </View>
-              )}
-            </TouchableOpacity>
+            <View style={styles.emptyActions}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={next}
+                style={[styles.pill, { borderColor: colors.glassBorder, marginRight: 12 }]}
+              >
+                {Platform.OS === 'ios' ? (
+                  <BlurView intensity={blur.medium} tint="light" style={[styles.pillInner, styles.pillNext]}>
+                    <AppText overlay variant="body" style={styles.pillNextText}>
+                      View Collections →
+                    </AppText>
+                  </BlurView>
+                ) : (
+                  <View style={[styles.pillInner, styles.pillAndroid, styles.pillNext]}>
+                    <AppText overlay variant="body" style={styles.pillNextText}>
+                      View Collections →
+                    </AppText>
+                  </View>
+                )}
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={resetList}
+                style={[styles.pill, { borderColor: colors.glassBorder }]}
+              >
+                {Platform.OS === 'ios' ? (
+                  <BlurView intensity={blur.medium} tint="light" style={[styles.pillInner, styles.pillNext]}>
+                    <AppText overlay variant="body" style={styles.pillNextText}>
+                      Reset List ↻
+                    </AppText>
+                  </BlurView>
+                ) : (
+                  <View style={[styles.pillInner, styles.pillAndroid, styles.pillNext]}>
+                    <AppText overlay variant="body" style={styles.pillNextText}>
+                      Reset List ↻
+                    </AppText>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
-        {/* Arc Carousel - Positioned at bottom - only show if there are items */}
-        {outfits.length > 0 && (
-          <ArcCarousel
-            items={outfits}
-            activeIndex={activeIndex}
-            onItemPress={handleArcItemPress}
-          />
-        )}
       </SafeAreaView>
     </View>
   );
@@ -581,7 +699,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 20,
-    paddingBottom: 180, // Space for arc carousel
+    paddingBottom: 40,
   },
   emptyState: {
     paddingBottom: 0,
@@ -596,6 +714,59 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     paddingHorizontal: 40,
+    marginBottom: 24,
+  },
+  emptyActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  neonZoneScreen: {
+    position: 'absolute',
+    top: 0,
+    width: SCREEN_WIDTH * 0.5,
+    height: SCREEN_HEIGHT,
+    zIndex: 99999, // Highest zIndex to be above all cards
+    overflow: 'hidden',
+  },
+  neonZoneRight: {
+    right: 0,
+    alignItems: 'flex-end',
+  },
+  neonZoneLeft: {
+    left: 0,
+    alignItems: 'flex-start',
+  },
+  neonZoneGradientRight: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Create ellipse shape using border radius - half ellipse from right edge
+    borderTopLeftRadius: SCREEN_HEIGHT,
+    borderBottomLeftRadius: SCREEN_HEIGHT,
+  },
+  neonZoneGradientLeft: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Create ellipse shape using border radius - half ellipse from left edge
+    borderTopRightRadius: SCREEN_HEIGHT,
+    borderBottomRightRadius: SCREEN_HEIGHT,
+  },
+  neonZoneContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  neonZoneText: {
+    fontWeight: '900',
+    fontSize: 28,
+    letterSpacing: 2,
+    textShadowColor: 'rgba(255, 255, 255, 0.5)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
 });
 

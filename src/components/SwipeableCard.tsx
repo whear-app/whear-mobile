@@ -9,7 +9,9 @@ import {
   PanResponder,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { useAppTheme } from '../hooks/useAppTheme';
 import { AppText } from './AppText';
@@ -18,6 +20,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.88;
 const CARD_HEIGHT = CARD_WIDTH * 1.35;
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
+const ZONE_WIDTH = SCREEN_WIDTH * 0.5; // Half screen width for zone spread
 
 type Outfit = {
   id: string;
@@ -33,6 +36,7 @@ interface Props {
   isActive: boolean;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
+  onSwipeProgress?: (dx: number) => void; // Callback to update zone opacity
   style?: any;
 }
 
@@ -41,6 +45,7 @@ export const SwipeableCard = memo(function SwipeableCard({
   isActive,
   onSwipeLeft,
   onSwipeRight,
+  onSwipeProgress,
   style,
 }: Props) {
   const { borderRadius, blur } = useAppTheme();
@@ -50,6 +55,8 @@ export const SwipeableCard = memo(function SwipeableCard({
   const scale = useRef(new Animated.Value(isActive ? 1 : 0.92)).current;
   const likeOpacity = useRef(new Animated.Value(0)).current;
   const nopeOpacity = useRef(new Animated.Value(0)).current;
+  const likeZoneOpacity = useRef(new Animated.Value(0)).current; // Neon green zone
+  const nopeZoneOpacity = useRef(new Animated.Value(0)).current; // Neon red zone
   const isSwipingRef = useRef(false);
 
   // Memoize callbacks
@@ -87,8 +94,10 @@ export const SwipeableCard = memo(function SwipeableCard({
       translateY.setValue(0);
       likeOpacity.setValue(0);
       nopeOpacity.setValue(0);
+      likeZoneOpacity.setValue(0);
+      nopeZoneOpacity.setValue(0);
     }
-  }, [isActive, translateX, translateY, likeOpacity, nopeOpacity]);
+  }, [isActive, translateX, translateY, likeOpacity, nopeOpacity, likeZoneOpacity, nopeZoneOpacity]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -116,17 +125,30 @@ export const SwipeableCard = memo(function SwipeableCard({
         translateY.setValue(gestureState.dy * 0.2);
 
         const xValue = gestureState.dx;
-        const threshold = SWIPE_THRESHOLD * 0.7;
+        const threshold = SWIPE_THRESHOLD * 0.5; // Threshold để vùng màu bắt đầu xuất hiện
+        const maxOpacity = 0.6; // Max opacity for zone
         
-        if (xValue > 0) {
-          const opacity = Math.min(1, xValue / threshold);
+        // Notify parent about swipe progress
+        if (onSwipeProgress) {
+          onSwipeProgress(xValue);
+        }
+        
+        if (xValue > threshold) {
+          // Swiping right - show green neon zone and like label
+          // Zone appears when swipe exceeds threshold
+          const progress = (xValue - threshold) / (SWIPE_THRESHOLD - threshold);
+          const opacity = Math.min(1, progress);
           likeOpacity.setValue(opacity);
           nopeOpacity.setValue(0);
-        } else if (xValue < 0) {
-          const opacity = Math.min(1, -xValue / threshold);
+        } else if (xValue < -threshold) {
+          // Swiping left - show red neon zone and nope label
+          // Zone appears when swipe exceeds threshold
+          const progress = (-xValue - threshold) / (SWIPE_THRESHOLD - threshold);
+          const opacity = Math.min(1, progress);
           nopeOpacity.setValue(opacity);
           likeOpacity.setValue(0);
         } else {
+          // Below threshold - hide zones
           likeOpacity.setValue(0);
           nopeOpacity.setValue(0);
         }
@@ -159,6 +181,11 @@ export const SwipeableCard = memo(function SwipeableCard({
               duration: 200,
               useNativeDriver: true,
             }),
+            Animated.timing(nopeZoneOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
           ]).start(() => {
             // Reset values immediately but don't reset isSwipingRef here
             // Let the parent component handle the state transition
@@ -166,6 +193,8 @@ export const SwipeableCard = memo(function SwipeableCard({
             translateY.setValue(0);
             likeOpacity.setValue(0);
             nopeOpacity.setValue(0);
+            likeZoneOpacity.setValue(0);
+            nopeZoneOpacity.setValue(0);
             // Call handler - parent will manage isSwipingRef
             handleSwipeLeft();
           });
@@ -189,6 +218,11 @@ export const SwipeableCard = memo(function SwipeableCard({
               duration: 200,
               useNativeDriver: true,
             }),
+            Animated.timing(likeZoneOpacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
           ]).start(() => {
             // Reset values immediately but don't reset isSwipingRef here
             // Let the parent component handle the state transition
@@ -196,27 +230,28 @@ export const SwipeableCard = memo(function SwipeableCard({
             translateY.setValue(0);
             likeOpacity.setValue(0);
             nopeOpacity.setValue(0);
+            likeZoneOpacity.setValue(0);
+            nopeZoneOpacity.setValue(0);
             // Call handler - parent will manage isSwipingRef
             handleSwipeRight();
           });
           return;
         }
 
-        // Spring back to center
+        // Spring back to center if not reached threshold
+        // Reset all values smoothly back to original position
         Animated.parallel([
           Animated.spring(translateX, {
             toValue: 0,
             useNativeDriver: true,
             damping: 18,
             stiffness: 250,
-            tension: 120,
           }),
           Animated.spring(translateY, {
             toValue: 0,
             useNativeDriver: true,
             damping: 18,
             stiffness: 250,
-            tension: 120,
           }),
           Animated.timing(likeOpacity, {
             toValue: 0,
@@ -228,13 +263,34 @@ export const SwipeableCard = memo(function SwipeableCard({
             duration: 200,
             useNativeDriver: true,
           }),
+          Animated.timing(likeZoneOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(nopeZoneOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
         ]).start(() => {
+          // Ensure all values are reset to 0
+          translateX.setValue(0);
+          translateY.setValue(0);
+          likeOpacity.setValue(0);
+          nopeOpacity.setValue(0);
+          likeZoneOpacity.setValue(0);
+          nopeZoneOpacity.setValue(0);
           isSwipingRef.current = false;
         });
       },
       onPanResponderTerminate: () => {
+        if (!isActive || !isSwipingRef.current) return;
+        
         translateX.flattenOffset();
         translateY.flattenOffset();
+        
+        // Spring back to center when gesture is terminated
         Animated.parallel([
           Animated.spring(translateX, {
             toValue: 0,
@@ -248,7 +304,34 @@ export const SwipeableCard = memo(function SwipeableCard({
             damping: 18,
             stiffness: 250,
           }),
+          Animated.timing(likeOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(nopeOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(likeZoneOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(nopeZoneOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
         ]).start(() => {
+          // Ensure all values are reset to 0
+          translateX.setValue(0);
+          translateY.setValue(0);
+          likeOpacity.setValue(0);
+          nopeOpacity.setValue(0);
+          likeZoneOpacity.setValue(0);
+          nopeZoneOpacity.setValue(0);
           isSwipingRef.current = false;
         });
       },
@@ -272,7 +355,8 @@ export const SwipeableCard = memo(function SwipeableCard({
   };
 
   return (
-    <View style={[styles.container, style]} collapsable={false}>
+    <View style={[styles.container, style]} collapsable={false} pointerEvents="box-none">
+
       <Animated.View
         style={[styles.card, { borderRadius: borderRadius.xl }, cardStyle]}
         {...(isActive ? panResponder.panHandlers : {})}
@@ -479,5 +563,54 @@ const styles = StyleSheet.create({
   ctaText: {
     fontWeight: '800',
     fontSize: 14,
+  },
+  neonZoneScreen: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    width: ZONE_WIDTH,
+    height: SCREEN_HEIGHT, // Full screen height
+    zIndex: 99999, // Highest zIndex to be above all cards
+    overflow: 'hidden',
+  },
+  neonZoneRight: {
+    right: 0,
+    alignItems: 'flex-end',
+  },
+  neonZoneLeft: {
+    left: 0,
+    alignItems: 'flex-start',
+  },
+  neonZoneGradientRight: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Create ellipse shape using border radius - half ellipse from right edge
+    borderTopLeftRadius: SCREEN_HEIGHT,
+    borderBottomLeftRadius: SCREEN_HEIGHT,
+  },
+  neonZoneGradientLeft: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Create ellipse shape using border radius - half ellipse from left edge
+    borderTopRightRadius: SCREEN_HEIGHT,
+    borderBottomRightRadius: SCREEN_HEIGHT,
+  },
+  neonZoneContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  neonZoneText: {
+    fontWeight: '900',
+    fontSize: 24,
+    letterSpacing: 2,
+    textShadowColor: 'rgba(255, 255, 255, 0.5)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
 });
