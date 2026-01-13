@@ -65,6 +65,7 @@ const MainTabs: React.FC = () => {
             return <Icon name="home" size={size || 24} color={color} />;
           },
           tabBarLabel: 'Today',
+          tabBarStyle: { display: 'none' },
         }}
       />
       <Tab.Screen

@@ -14,10 +14,10 @@ import { Image } from 'expo-image';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { AppText } from './AppText';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH * 0.82;
-const CARD_HEIGHT = CARD_WIDTH * 1.28;
-const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.26;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const CARD_WIDTH = SCREEN_WIDTH * 0.88;
+const CARD_HEIGHT = CARD_WIDTH * 1.35;
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 
 type Outfit = {
   id: string;
@@ -47,11 +47,12 @@ export const SwipeableCard = memo(function SwipeableCard({
 
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(isActive ? 1 : 0.965)).current;
+  const scale = useRef(new Animated.Value(isActive ? 1 : 0.92)).current;
   const likeOpacity = useRef(new Animated.Value(0)).current;
   const nopeOpacity = useRef(new Animated.Value(0)).current;
+  const isSwipingRef = useRef(false);
 
-  // Memoize callbacks to prevent recreation
+  // Memoize callbacks
   const handleSwipeLeft = useCallback(() => {
     onSwipeLeft();
   }, [onSwipeLeft]);
@@ -62,17 +63,26 @@ export const SwipeableCard = memo(function SwipeableCard({
 
   // Update scale when isActive changes
   useEffect(() => {
-    Animated.spring(scale, {
-      toValue: isActive ? 1 : 0.965,
-      useNativeDriver: true,
-      damping: 14,
-      stiffness: 180,
-    }).start();
+    if (isActive) {
+      Animated.spring(scale, {
+        toValue: 1,
+        useNativeDriver: true,
+        damping: 15,
+        stiffness: 200,
+      }).start();
+    } else {
+      Animated.spring(scale, {
+        toValue: 0.92,
+        useNativeDriver: true,
+        damping: 15,
+        stiffness: 200,
+      }).start();
+    }
   }, [isActive, scale]);
 
-  // Reset card position when it becomes inactive
+  // Reset card position when it becomes inactive (but only if not currently swiping)
   useEffect(() => {
-    if (!isActive) {
+    if (!isActive && !isSwipingRef.current) {
       translateX.setValue(0);
       translateY.setValue(0);
       likeOpacity.setValue(0);
@@ -82,40 +92,37 @@ export const SwipeableCard = memo(function SwipeableCard({
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => isActive,
+      onStartShouldSetPanResponder: () => isActive && !isSwipingRef.current,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        if (!isActive) return false;
-        // Only activate if movement is significant
+        if (!isActive || isSwipingRef.current) return false;
         return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
       },
       onPanResponderGrant: () => {
-        // Stop any ongoing animations
+        if (!isActive || isSwipingRef.current) return;
+        isSwipingRef.current = true;
         translateX.stopAnimation();
         translateY.stopAnimation();
-        // Set offset to current value
-        translateX.setOffset((translateX as any)._value || 0);
-        translateY.setOffset((translateY as any)._value || 0);
+        const currentX = (translateX as any)._value || 0;
+        const currentY = (translateY as any)._value || 0;
+        translateX.setOffset(currentX);
+        translateY.setOffset(currentY);
         translateX.setValue(0);
         translateY.setValue(0);
       },
       onPanResponderMove: (_, gestureState) => {
-        if (!isActive) return;
+        if (!isActive || !isSwipingRef.current) return;
         
-        // Use setValue for immediate updates (native driver handles this efficiently)
         translateX.setValue(gestureState.dx);
-        translateY.setValue(gestureState.dy * 0.22);
+        translateY.setValue(gestureState.dy * 0.2);
 
-        // Calculate and update opacities efficiently
         const xValue = gestureState.dx;
-        const threshold = SWIPE_THRESHOLD * 0.75;
+        const threshold = SWIPE_THRESHOLD * 0.7;
         
         if (xValue > 0) {
-          // Swiping right
           const opacity = Math.min(1, xValue / threshold);
           likeOpacity.setValue(opacity);
           nopeOpacity.setValue(0);
         } else if (xValue < 0) {
-          // Swiping left
           const opacity = Math.min(1, -xValue / threshold);
           nopeOpacity.setValue(opacity);
           likeOpacity.setValue(0);
@@ -125,66 +132,71 @@ export const SwipeableCard = memo(function SwipeableCard({
         }
       },
       onPanResponderRelease: (_, gestureState) => {
+        if (!isActive || !isSwipingRef.current) return;
+        
         translateX.flattenOffset();
         translateY.flattenOffset();
 
         const dx = gestureState.dx;
-        const shouldLeft = dx < -SWIPE_THRESHOLD;
-        const shouldRight = dx > SWIPE_THRESHOLD;
+        const velocityX = gestureState.vx;
+        const shouldLeft = dx < -SWIPE_THRESHOLD || (dx < -50 && velocityX < -0.5);
+        const shouldRight = dx > SWIPE_THRESHOLD || (dx > 50 && velocityX > 0.5);
 
         if (shouldLeft) {
-          // Swipe left - animate off screen
           Animated.parallel([
             Animated.timing(translateX, {
               toValue: -SCREEN_WIDTH * 1.5,
-              duration: 200,
+              duration: 250,
               useNativeDriver: true,
             }),
             Animated.timing(translateY, {
               toValue: gestureState.dy * 0.3,
-              duration: 200,
+              duration: 250,
               useNativeDriver: true,
             }),
             Animated.timing(nopeOpacity, {
               toValue: 0,
-              duration: 150,
+              duration: 200,
               useNativeDriver: true,
             }),
           ]).start(() => {
-            // Reset after animation completes
+            // Reset values immediately but don't reset isSwipingRef here
+            // Let the parent component handle the state transition
             translateX.setValue(0);
             translateY.setValue(0);
             likeOpacity.setValue(0);
             nopeOpacity.setValue(0);
+            // Call handler - parent will manage isSwipingRef
             handleSwipeLeft();
           });
           return;
         }
 
         if (shouldRight) {
-          // Swipe right - animate off screen
           Animated.parallel([
             Animated.timing(translateX, {
               toValue: SCREEN_WIDTH * 1.5,
-              duration: 200,
+              duration: 250,
               useNativeDriver: true,
             }),
             Animated.timing(translateY, {
               toValue: gestureState.dy * 0.3,
-              duration: 200,
+              duration: 250,
               useNativeDriver: true,
             }),
             Animated.timing(likeOpacity, {
               toValue: 0,
-              duration: 150,
+              duration: 200,
               useNativeDriver: true,
             }),
           ]).start(() => {
-            // Reset after animation completes
+            // Reset values immediately but don't reset isSwipingRef here
+            // Let the parent component handle the state transition
             translateX.setValue(0);
             translateY.setValue(0);
             likeOpacity.setValue(0);
             nopeOpacity.setValue(0);
+            // Call handler - parent will manage isSwipingRef
             handleSwipeRight();
           });
           return;
@@ -195,16 +207,16 @@ export const SwipeableCard = memo(function SwipeableCard({
           Animated.spring(translateX, {
             toValue: 0,
             useNativeDriver: true,
-            damping: 15,
-            stiffness: 200,
-            tension: 100,
+            damping: 18,
+            stiffness: 250,
+            tension: 120,
           }),
           Animated.spring(translateY, {
             toValue: 0,
             useNativeDriver: true,
-            damping: 15,
-            stiffness: 200,
-            tension: 100,
+            damping: 18,
+            stiffness: 250,
+            tension: 120,
           }),
           Animated.timing(likeOpacity, {
             toValue: 0,
@@ -216,34 +228,37 @@ export const SwipeableCard = memo(function SwipeableCard({
             duration: 200,
             useNativeDriver: true,
           }),
-        ]).start();
+        ]).start(() => {
+          isSwipingRef.current = false;
+        });
       },
       onPanResponderTerminate: () => {
-        // Handle interruption (e.g., by another gesture)
         translateX.flattenOffset();
         translateY.flattenOffset();
         Animated.parallel([
           Animated.spring(translateX, {
             toValue: 0,
             useNativeDriver: true,
-            damping: 15,
-            stiffness: 200,
+            damping: 18,
+            stiffness: 250,
           }),
           Animated.spring(translateY, {
             toValue: 0,
             useNativeDriver: true,
-            damping: 15,
-            stiffness: 200,
+            damping: 18,
+            stiffness: 250,
           }),
-        ]).start();
+        ]).start(() => {
+          isSwipingRef.current = false;
+        });
       },
     })
   ).current;
 
-  // Calculate rotation based on translateX - use native driver compatible interpolation
+  // Calculate rotation
   const rotate = translateX.interpolate({
     inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-    outputRange: ['-12deg', '0deg', '12deg'],
+    outputRange: ['-15deg', '0deg', '15deg'],
     extrapolate: 'clamp',
   });
 
@@ -268,16 +283,16 @@ export const SwipeableCard = memo(function SwipeableCard({
           style={styles.image}
           contentFit="cover"
           transition={200}
-          cachePolicy="disk"
+          cachePolicy="memory-disk"
           recyclingKey={outfit.id}
           priority="high"
         />
 
-        {/* soft scrim bottom */}
+        {/* Gradient overlay bottom */}
         <View style={styles.bottomScrim} />
 
-        {/* labels */}
-        <Animated.View 
+        {/* Labels */}
+        <Animated.View
           style={[styles.labelWrap, styles.labelRight, { opacity: likeOpacity }]}
           pointerEvents="none"
         >
@@ -288,7 +303,7 @@ export const SwipeableCard = memo(function SwipeableCard({
           </View>
         </Animated.View>
 
-        <Animated.View 
+        <Animated.View
           style={[styles.labelWrap, styles.labelLeft, { opacity: nopeOpacity }]}
           pointerEvents="none"
         >
@@ -299,59 +314,51 @@ export const SwipeableCard = memo(function SwipeableCard({
           </View>
         </Animated.View>
 
-        {/* editorial text */}
+        {/* Content */}
         <View style={styles.content} pointerEvents="box-none">
-          <AppText overlay variant="h1" numberOfLines={1} style={{ fontWeight: '800' }}>
+          <AppText overlay variant="h1" numberOfLines={1} style={styles.title}>
             {outfit.title}
           </AppText>
-          <AppText overlay muted variant="h2" numberOfLines={1} style={{ marginTop: 2 }}>
+          <AppText overlay muted variant="h2" numberOfLines={1} style={styles.subtitle}>
             {outfit.subtitle}
           </AppText>
 
-          <AppText overlay muted variant="tiny" style={{ marginTop: 6 }}>
+          <AppText overlay muted variant="tiny" style={styles.handle}>
             {outfit.handle}
           </AppText>
 
-          <AppText overlay muted variant="caption" numberOfLines={2} style={{ marginTop: 10 }}>
+          <AppText overlay muted variant="caption" numberOfLines={2} style={styles.reason}>
             Because: {outfit.reason}
           </AppText>
 
           {/* CTA buttons */}
           <View style={styles.ctaRow} pointerEvents="box-none">
-            <TouchableOpacity 
-              activeOpacity={0.8} 
-              style={styles.cta}
-              onPress={() => {}}
-            >
+            <TouchableOpacity activeOpacity={0.8} style={styles.cta} onPress={() => {}}>
               {Platform.OS === 'ios' ? (
                 <BlurView intensity={blur.medium} tint="light" style={styles.ctaInner}>
-                  <AppText overlay variant="caption" style={{ fontWeight: '700' }}>
+                  <AppText overlay variant="caption" style={styles.ctaText}>
                     Details
                   </AppText>
                 </BlurView>
               ) : (
                 <View style={[styles.ctaInner, styles.ctaAndroid]}>
-                  <AppText overlay variant="caption" style={{ fontWeight: '700' }}>
+                  <AppText overlay variant="caption" style={styles.ctaText}>
                     Details
                   </AppText>
                 </View>
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              activeOpacity={0.8} 
-              style={styles.cta}
-              onPress={() => {}}
-            >
+            <TouchableOpacity activeOpacity={0.8} style={styles.cta} onPress={() => {}}>
               {Platform.OS === 'ios' ? (
                 <BlurView intensity={blur.medium} tint="light" style={styles.ctaInner}>
-                  <AppText overlay variant="caption" style={{ fontWeight: '700' }}>
+                  <AppText overlay variant="caption" style={styles.ctaText}>
                     Wear Today
                   </AppText>
                 </BlurView>
               ) : (
                 <View style={[styles.ctaInner, styles.ctaAndroid]}>
-                  <AppText overlay variant="caption" style={{ fontWeight: '700' }}>
+                  <AppText overlay variant="caption" style={styles.ctaText}>
                     Wear Today
                   </AppText>
                 </View>
@@ -363,7 +370,6 @@ export const SwipeableCard = memo(function SwipeableCard({
     </View>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison for memo - only re-render if props actually change
   return (
     prevProps.outfit.id === nextProps.outfit.id &&
     prevProps.isActive === nextProps.isActive &&
@@ -372,9 +378,9 @@ export const SwipeableCard = memo(function SwipeableCard({
 });
 
 const styles = StyleSheet.create({
-  container: { 
-    position: 'absolute', 
-    alignItems: 'center', 
+  container: {
+    position: 'absolute',
+    alignItems: 'center',
     justifyContent: 'center',
   },
   card: {
@@ -383,67 +389,95 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#fff',
     shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 8,
   },
-  image: { 
-    width: '100%', 
+  image: {
+    width: '100%',
     height: '100%',
   },
-
   bottomScrim: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    height: 180,
-    backgroundColor: 'rgba(0,0,0,0.28)',
+    height: 200,
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
-
-  labelWrap: { 
-    position: 'absolute', 
-    top: 20, 
+  labelWrap: {
+    position: 'absolute',
+    top: 24,
     zIndex: 10,
   },
-  labelLeft: { left: 16 },
-  labelRight: { right: 16 },
+  labelLeft: { left: 20 },
+  labelRight: { right: 20 },
   labelPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  labelText: { fontWeight: '800', letterSpacing: 0.6 },
-
-  content: { 
-    position: 'absolute', 
-    left: 18, 
-    right: 18, 
-    bottom: 18,
+  labelText: {
+    fontWeight: '900',
+    letterSpacing: 1,
+    fontSize: 13,
   },
-  ctaRow: { 
-    marginTop: 14, 
-    flexDirection: 'row', 
-    gap: 10,
+  content: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 24,
   },
-  cta: { 
-    flex: 1, 
-    borderRadius: 999, 
+  title: {
+    fontWeight: '900',
+    fontSize: 28,
+    lineHeight: 32,
+  },
+  subtitle: {
+    marginTop: 4,
+    fontWeight: '600',
+    fontSize: 18,
+  },
+  handle: {
+    marginTop: 8,
+    fontWeight: '500',
+  },
+  reason: {
+    marginTop: 12,
+    lineHeight: 20,
+  },
+  ctaRow: {
+    marginTop: 18,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cta: {
+    flex: 1,
+    borderRadius: 999,
     overflow: 'hidden',
   },
   ctaInner: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   ctaAndroid: {
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  ctaText: {
+    fontWeight: '800',
+    fontSize: 14,
   },
 });

@@ -3,7 +3,7 @@ import { View, StyleSheet, Dimensions, TouchableOpacity, Platform } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -16,7 +16,7 @@ import { MainStackParamList } from '../../navigation/types';
 import { ROUTES } from '../../constants/routes';
 import { useTodayCollectionStore } from '../../stores/todayCollectionStore';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
 export interface OutfitSuggestion {
@@ -32,7 +32,7 @@ export interface OutfitSuggestion {
 }
 
 // Optimize image URLs
-const img = (u: string) => u.replace('w=1200', 'w=900');
+const img = (u: string) => u.replace('w=1200', 'w=1000');
 
 const mockOutfits: OutfitSuggestion[] = [
   {
@@ -107,38 +107,91 @@ const mockOutfits: OutfitSuggestion[] = [
     reason: 'Any day + Minimal + Timeless',
     bgGradient: ['#BFC7D1', '#D7DCE3', '#F0F1F3'],
   },
+  {
+    id: '9',
+    imageUri: img('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&auto=format&fit=crop'),
+    title: 'Weekend Vibes',
+    subtitle: 'relaxed comfort',
+    handle: '@weekend.mode',
+    reason: 'Weekend + Casual + Cozy',
+    bgGradient: ['#C4B5A0', '#D4C7B5', '#E8DFD1'],
+  },
+  {
+    id: '10',
+    imageUri: img('https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=1200&auto=format&fit=crop'),
+    title: 'Athletic Edge',
+    subtitle: 'sporty elegance',
+    handle: '@active.style',
+    reason: 'Active + Sporty + Functional',
+    bgGradient: ['#A8B5C0', '#C0D0DB', '#E0E8ED'],
+  },
+  {
+    id: '11',
+    imageUri: img('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&auto=format&fit=crop'),
+    title: 'Bohemian Flow',
+    subtitle: 'free spirit',
+    handle: '@boho.life',
+    reason: 'Festival + Free + Flowy',
+    bgGradient: ['#D4B8A8', '#E4CCC0', '#F4E6DC'],
+  },
+  {
+    id: '12',
+    imageUri: img('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&auto=format&fit=crop'),
+    title: 'Classic Tailored',
+    subtitle: 'timeless elegance',
+    handle: '@classic.cut',
+    reason: 'Formal + Tailored + Professional',
+    bgGradient: ['#9FA4A8', '#B8BDC2', '#D8DCE0'],
+  },
+  {
+    id: '13',
+    imageUri: img('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&auto=format&fit=crop'),
+    title: 'Urban Explorer',
+    subtitle: 'city wanderer',
+    handle: '@urban.walk',
+    reason: 'City + Practical + Stylish',
+    bgGradient: ['#B2AFA8', '#CBC8C0', '#E8E6DF'],
+  },
+  {
+    id: '14',
+    imageUri: img('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&auto=format&fit=crop'),
+    title: 'Romantic Blush',
+    subtitle: 'soft femininity',
+    handle: '@romance.edit',
+    reason: 'Date + Romantic + Delicate',
+    bgGradient: ['#E8C4C0', '#F0D4D0', '#F8E4E0'],
+  },
+  {
+    id: '15',
+    imageUri: img('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&auto=format&fit=crop'),
+    title: 'Monochrome Magic',
+    subtitle: 'black & white',
+    handle: '@mono.studio',
+    reason: 'Any occasion + Classic + Bold',
+    bgGradient: ['#6B6B6B', '#8B8B8B', '#B0B0B0'],
+  },
 ];
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { colors, spacing, borderRadius, blur } = useAppTheme();
-  const { addAccepted, removeAccepted } = useTodayCollectionStore();
+  const { addAccepted, addRejected, removeAccepted, removeRejected } = useTodayCollectionStore();
 
   const [outfits, setOutfits] = useState<OutfitSuggestion[]>(mockOutfits);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [history, setHistory] = useState<Array<{ index: number; action: 'left' | 'right' }>>([]);
+  const [history, setHistory] = useState<Array<{ item: OutfitSuggestion; index: number; action: 'left' | 'right' }>>([]);
   
-  // Use ref to prevent stale closures
-  const isProcessingRef = useRef(false);
+  const isSwipingRef = useRef(false);
+  const swipeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      const parent = navigation.getParent();
-      if (parent) parent.setOptions({ tabBarStyle: { display: 'none' } });
-      return () => {
-        if (parent) parent.setOptions({ tabBarStyle: undefined });
-      };
-    }, [navigation])
-  );
-
-  // Prefetch images asynchronously without blocking
+  // Prefetch images asynchronously
   useEffect(() => {
     const prefetchImages = async () => {
-      const urls = outfits.slice(0, 5).map((o) => o.imageUri);
+      const urls = outfits.slice(0, 6).map((o) => o.imageUri);
       try {
         await Promise.all(urls.map(url => Image.prefetch(url).catch(() => {})));
       } catch (error) {
-        // Silently fail - images will load on demand
+        // Silently fail
       }
     };
     prefetchImages();
@@ -150,112 +203,179 @@ const HomeScreen: React.FC = () => {
     [active?.bgGradient, colors.backgroundGradient]
   );
 
-  // Memoize callbacks to prevent unnecessary re-renders
+  // Fixed goNext - immediately update index and reset swiping flag
   const goNext = useCallback(() => {
+    if (swipeTimeoutRef.current) {
+      clearTimeout(swipeTimeoutRef.current);
+    }
+    
+    // Update index immediately
     setActiveIndex((prev) => {
       const next = Math.min(prev + 1, outfits.length - 1);
+      // Reset swiping flag after animation completes
+      swipeTimeoutRef.current = setTimeout(() => {
+        isSwipingRef.current = false;
+      }, 350);
       return next;
     });
   }, [outfits.length]);
 
+  // Fixed onLeft - remove from list and add to rejected collection
   const onLeft = useCallback(() => {
-    if (isProcessingRef.current) return;
-    isProcessingRef.current = true;
+    // Prevent multiple simultaneous swipes
+    if (isSwipingRef.current) return;
+    isSwipingRef.current = true;
     
-    const current = outfits[activeIndex];
+    const currentIndex = activeIndex;
+    const current = outfits[currentIndex];
     if (!current) {
-      isProcessingRef.current = false;
+      isSwipingRef.current = false;
       return;
     }
 
-    setOutfits((prev) =>
-      prev.map((o) => (o.id === current.id ? { ...o, isRejected: true, isAccepted: false } : o))
-    );
-    setHistory((prev) => [...prev, { index: activeIndex, action: 'left' }]);
+    // Add to rejected collection
+    addRejected(current);
+    setHistory((prev) => [...prev, { item: current, index: currentIndex, action: 'left' }]);
     
-    // Use setTimeout to ensure state updates complete before moving to next
-    setTimeout(() => {
+    // Remove from main list and update activeIndex
+    setOutfits((prev) => {
+      const newList = prev.filter((o) => o.id !== current.id);
+      // Adjust activeIndex if needed
+      if (currentIndex >= newList.length && newList.length > 0) {
+        setActiveIndex(Math.max(0, newList.length - 1));
+      } else if (newList.length === 0) {
+        setActiveIndex(0);
+      }
+      return newList;
+    });
+    
+    // Move to next card (or stay if no more cards)
+    if (currentIndex >= outfits.length - 1) {
+      // If this was the last card, stay at current index (which will be the new last)
+      setTimeout(() => {
+        isSwipingRef.current = false;
+      }, 350);
+    } else {
+      // If not last, move to next (which will be at same index after removal)
       goNext();
-      isProcessingRef.current = false;
-    }, 100);
-  }, [activeIndex, outfits, goNext]);
+    }
+  }, [activeIndex, outfits, goNext, addRejected]);
 
+  // Fixed onRight - remove from list and add to accepted collection
   const onRight = useCallback(() => {
-    if (isProcessingRef.current) return;
-    isProcessingRef.current = true;
+    // Prevent multiple simultaneous swipes
+    if (isSwipingRef.current) return;
+    isSwipingRef.current = true;
     
-    const current = outfits[activeIndex];
+    const currentIndex = activeIndex;
+    const current = outfits[currentIndex];
     if (!current) {
-      isProcessingRef.current = false;
+      isSwipingRef.current = false;
       return;
     }
 
-    setOutfits((prev) =>
-      prev.map((o) => (o.id === current.id ? { ...o, isAccepted: true, isRejected: false } : o))
-    );
+    // Add to accepted collection
     addAccepted(current);
-    setHistory((prev) => [...prev, { index: activeIndex, action: 'right' }]);
+    setHistory((prev) => [...prev, { item: current, index: currentIndex, action: 'right' }]);
     
-    setTimeout(() => {
+    // Remove from main list and update activeIndex
+    setOutfits((prev) => {
+      const newList = prev.filter((o) => o.id !== current.id);
+      // Adjust activeIndex if needed
+      if (currentIndex >= newList.length && newList.length > 0) {
+        setActiveIndex(Math.max(0, newList.length - 1));
+      } else if (newList.length === 0) {
+        setActiveIndex(0);
+      }
+      return newList;
+    });
+    
+    // Move to next card (or stay if no more cards)
+    if (currentIndex >= outfits.length - 1) {
+      // If this was the last card, stay at current index (which will be the new last)
+      setTimeout(() => {
+        isSwipingRef.current = false;
+      }, 350);
+    } else {
+      // If not last, move to next (which will be at same index after removal)
       goNext();
-      isProcessingRef.current = false;
-    }, 100);
+    }
   }, [activeIndex, outfits, goNext, addAccepted]);
 
   const undo = useCallback(() => {
-    if (!history.length || isProcessingRef.current) return;
-    isProcessingRef.current = true;
+    if (!history.length) return;
     
     const last = history[history.length - 1];
-    const item = outfits[last.index];
-    if (!item) {
-      isProcessingRef.current = false;
-      return;
-    }
+    const item = last.item;
+    if (!item) return;
 
+    // Remove from collection
     if (last.action === 'right') {
       removeAccepted(item.id);
+    } else {
+      removeRejected(item.id);
     }
 
+    // Add back to main list at the original position
+    setOutfits((prev) => {
+      const newList = [...prev];
+      const insertIndex = Math.min(last.index, newList.length);
+      newList.splice(insertIndex, 0, item);
+      return newList;
+    });
+
     setHistory((prev) => prev.slice(0, -1));
-    setOutfits((prev) =>
-      prev.map((o, idx) => (idx === last.index ? { ...o, isAccepted: false, isRejected: false } : o))
-    );
     setActiveIndex(last.index);
-    
-    setTimeout(() => {
-      isProcessingRef.current = false;
-    }, 100);
-  }, [history, outfits, removeAccepted]);
+  }, [history, removeAccepted, removeRejected]);
 
   const next = useCallback(() => {
-    const acceptedIds = outfits.filter((o) => o.isAccepted).map((o) => o.id);
-    navigation.navigate(ROUTES.OUTFIT_HISTORY, { 
-      mode: 'today', 
-      acceptedIds 
-    });
-  }, [outfits, navigation]);
+    navigation.navigate(ROUTES.COLLECTIONS);
+  }, [navigation]);
 
-  // Only render visible cards (max 2 for performance)
+  // Handle arc carousel item press - ensure it updates the active card
+  const handleArcItemPress = useCallback((index: number) => {
+    if (index !== activeIndex && index >= 0 && index < outfits.length && !isSwipingRef.current) {
+      isSwipingRef.current = true;
+      setActiveIndex(index);
+      // Reset swiping flag after a short delay
+      setTimeout(() => {
+        isSwipingRef.current = false;
+      }, 200);
+    }
+  }, [activeIndex, outfits.length]);
+
+  // Only render active card + 1 next card for performance
+  // Use stable reference to prevent unnecessary re-renders
   const visibleCards = useMemo(
-    () => outfits.slice(activeIndex, activeIndex + 2),
+    () => {
+      const cards = outfits.slice(activeIndex, activeIndex + 2);
+      return cards;
+    },
     [outfits, activeIndex]
   );
-  const cardOffset = 8;
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (swipeTimeoutRef.current) {
+        clearTimeout(swipeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <View style={styles.container}>
-      <LinearGradient 
-        colors={bg} 
-        start={{ x: 0.15, y: 0 }} 
-        end={{ x: 0.85, y: 1 }} 
-        style={StyleSheet.absoluteFill} 
+      <LinearGradient
+        colors={bg}
+        start={{ x: 0.15, y: 0 }}
+        end={{ x: 0.85, y: 1 }}
+        style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: spacing.xl }]}>
-          <AppText variant="display" overlay style={{ fontWeight: '800' }}>
+          <AppText variant="display" overlay style={styles.headerTitle}>
             Today
           </AppText>
 
@@ -263,33 +383,33 @@ const HomeScreen: React.FC = () => {
             <View style={[styles.pill, { borderColor: colors.glassBorder }]}>
               {Platform.OS === 'ios' ? (
                 <BlurView intensity={blur.medium} tint="light" style={styles.pillInner}>
-                  <AppText overlay variant="caption" style={{ fontWeight: '700' }}>
+                  <AppText overlay variant="caption" style={styles.pillText}>
                     Hot 🔥
                   </AppText>
                 </BlurView>
               ) : (
                 <View style={[styles.pillInner, styles.pillAndroid]}>
-                  <AppText overlay variant="caption" style={{ fontWeight: '700' }}>
+                  <AppText overlay variant="caption" style={styles.pillText}>
                     Hot 🔥
                   </AppText>
                 </View>
               )}
             </View>
 
-            <TouchableOpacity 
-              activeOpacity={0.8} 
-              onPress={next} 
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={next}
               style={[styles.pill, { borderColor: colors.glassBorder }]}
             >
               {Platform.OS === 'ios' ? (
-                <BlurView intensity={blur.medium} tint="light" style={[styles.pillInner, { paddingHorizontal: 14 }]}>
-                  <AppText overlay variant="body" style={{ fontWeight: '800' }}>
+                <BlurView intensity={blur.medium} tint="light" style={[styles.pillInner, styles.pillNext]}>
+                  <AppText overlay variant="body" style={styles.pillNextText}>
                     Next →
                   </AppText>
                 </BlurView>
               ) : (
-                <View style={[styles.pillInner, styles.pillAndroid, { paddingHorizontal: 14 }]}>
-                  <AppText overlay variant="body" style={{ fontWeight: '800' }}>
+                <View style={[styles.pillInner, styles.pillAndroid, styles.pillNext]}>
+                  <AppText overlay variant="body" style={styles.pillNextText}>
                     Next →
                   </AppText>
                 </View>
@@ -298,115 +418,184 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Undo */}
+        {/* Undo Button */}
         {history.length > 0 && (
-          <TouchableOpacity 
-            activeOpacity={0.8} 
-            onPress={undo} 
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={undo}
             style={[styles.undo, { borderColor: colors.glassBorder, borderRadius: borderRadius.full }]}
           >
             {Platform.OS === 'ios' ? (
               <BlurView intensity={blur.medium} tint="light" style={styles.undoInner}>
-                <Icon name="undo" size={20} color="rgba(255,255,255,0.92)" />
+                <Icon name="undo" size={22} color="rgba(255,255,255,0.95)" />
               </BlurView>
             ) : (
               <View style={[styles.undoInner, styles.undoAndroid]}>
-                <Icon name="undo" size={20} color="rgba(255,255,255,0.92)" />
+                <Icon name="undo" size={22} color="rgba(255,255,255,0.95)" />
               </View>
             )}
           </TouchableOpacity>
         )}
 
-        {/* Card stack */}
-        <View style={styles.cardZone} pointerEvents="box-none">
-          {visibleCards.map((o, idx) => (
-            <SwipeableCard
-              key={o.id}
-              outfit={o}
-              isActive={idx === 0}
-              onSwipeLeft={onLeft}
-              onSwipeRight={onRight}
-              style={{
-                zIndex: 20 - idx,
-                transform: [
-                  { translateX: idx * cardOffset - cardOffset }, 
-                  { translateY: idx * cardOffset }
-                ],
-              }}
-            />
-          ))}
-        </View>
+        {/* Card Stack - Positioned to leave space for arc carousel */}
+        {outfits.length > 0 ? (
+          <View style={styles.cardZone} pointerEvents="box-none">
+            {visibleCards.map((o, idx) => {
+              const isActive = idx === 0;
+              return (
+                <SwipeableCard
+                  key={`${o.id}-${activeIndex + idx}`}
+                  outfit={o}
+                  isActive={isActive}
+                  onSwipeLeft={onLeft}
+                  onSwipeRight={onRight}
+                  style={{
+                    zIndex: isActive ? 100 : 50,
+                    transform: [
+                      { translateX: idx * 6 - 6 },
+                      { translateY: idx * 6 },
+                    ],
+                  }}
+                />
+              );
+            })}
+          </View>
+        ) : (
+          <View style={[styles.cardZone, styles.emptyState]}>
+            <AppText overlay variant="h1" style={styles.emptyTitle}>
+              All Done! 🎉
+            </AppText>
+            <AppText overlay muted variant="body" style={styles.emptySubtitle}>
+              You've reviewed all outfits for today
+            </AppText>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={next}
+              style={[styles.pill, { borderColor: colors.glassBorder, marginTop: 24 }]}
+            >
+              {Platform.OS === 'ios' ? (
+                <BlurView intensity={blur.medium} tint="light" style={[styles.pillInner, styles.pillNext]}>
+                  <AppText overlay variant="body" style={styles.pillNextText}>
+                    View Collections →
+                  </AppText>
+                </BlurView>
+              ) : (
+                <View style={[styles.pillInner, styles.pillAndroid, styles.pillNext]}>
+                  <AppText overlay variant="body" style={styles.pillNextText}>
+                    View Collections →
+                  </AppText>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
 
-        <ArcCarousel 
-          items={outfits} 
-          activeIndex={activeIndex} 
-          onItemPress={(index) => {
-            if (!isProcessingRef.current) {
-              setActiveIndex(index);
-            }
-          }} 
-        />
+        {/* Arc Carousel - Positioned at bottom - only show if there are items */}
+        {outfits.length > 0 && (
+          <ArcCarousel
+            items={outfits}
+            activeIndex={activeIndex}
+            onItemPress={handleArcItemPress}
+          />
+        )}
       </SafeAreaView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  safeArea: { flex: 1 },
-
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingTop: 10, 
-    paddingBottom: 18,
+  container: {
+    flex: 1,
   },
-  headerRight: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 10,
+  safeArea: {
+    flex: 1,
   },
-
-  pill: { 
-    borderWidth: 1, 
-    borderRadius: 999, 
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    paddingBottom: 20,
+    zIndex: 10,
+  },
+  headerTitle: {
+    fontWeight: '900',
+    fontSize: 32,
+    letterSpacing: -0.5,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  pill: {
+    borderWidth: 1.5,
+    borderRadius: 999,
     overflow: 'hidden',
   },
-  pillInner: { 
-    paddingHorizontal: 12, 
-    paddingVertical: 8, 
-    alignItems: 'center', 
+  pillInner: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    alignItems: 'center',
     justifyContent: 'center',
   },
+  pillNext: {
+    paddingHorizontal: 18,
+  },
   pillAndroid: {
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
   },
-
-  undo: { 
-    position: 'absolute', 
-    left: 18, 
-    top: 108, 
-    width: 42, 
-    height: 42, 
-    overflow: 'hidden', 
-    borderWidth: 1, 
+  pillText: {
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  pillNextText: {
+    fontWeight: '900',
+    fontSize: 15,
+  },
+  undo: {
+    position: 'absolute',
+    left: 20,
+    top: 110,
+    width: 46,
+    height: 46,
+    overflow: 'hidden',
+    borderWidth: 1.5,
     zIndex: 200,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
-  undoInner: { 
-    flex: 1, 
-    alignItems: 'center', 
+  undoInner: {
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   undoAndroid: {
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
   },
-
-  cardZone: { 
-    flex: 1, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    paddingTop: 12,
+  cardZone: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 20,
+    paddingBottom: 180, // Space for arc carousel
+  },
+  emptyState: {
+    paddingBottom: 0,
+  },
+  emptyTitle: {
+    fontWeight: '900',
+    fontSize: 32,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    paddingHorizontal: 40,
   },
 });
 

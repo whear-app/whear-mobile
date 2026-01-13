@@ -32,6 +32,7 @@ export type MainStackParamList = {
 
   [ROUTES.CATALOG]: { missingCategory?: string };
   [ROUTES.UPGRADE]: undefined;
+  [ROUTES.COLLECTIONS]: undefined;
 };
 
 export type RootStackParamList = {
