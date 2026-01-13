@@ -187,16 +187,14 @@ export const SwipeableCard = memo(function SwipeableCard({
               useNativeDriver: true,
             }),
           ]).start(() => {
-            // Reset values immediately but don't reset isSwipingRef here
-            // Let the parent component handle the state transition
-            translateX.setValue(0);
-            translateY.setValue(0);
+            // Call handler first - parent will handle removal and state transition
+            handleSwipeLeft();
+            // Don't reset translateX/translateY here - let card stay off-screen
+            // Reset opacity values only
             likeOpacity.setValue(0);
             nopeOpacity.setValue(0);
             likeZoneOpacity.setValue(0);
             nopeZoneOpacity.setValue(0);
-            // Call handler - parent will manage isSwipingRef
-            handleSwipeLeft();
           });
           return;
         }
@@ -224,16 +222,14 @@ export const SwipeableCard = memo(function SwipeableCard({
               useNativeDriver: true,
             }),
           ]).start(() => {
-            // Reset values immediately but don't reset isSwipingRef here
-            // Let the parent component handle the state transition
-            translateX.setValue(0);
-            translateY.setValue(0);
+            // Call handler first - parent will handle removal and state transition
+            handleSwipeRight();
+            // Don't reset translateX/translateY here - let card stay off-screen
+            // Reset opacity values only
             likeOpacity.setValue(0);
             nopeOpacity.setValue(0);
             likeZoneOpacity.setValue(0);
             nopeZoneOpacity.setValue(0);
-            // Call handler - parent will manage isSwipingRef
-            handleSwipeRight();
           });
           return;
         }

@@ -224,6 +224,10 @@ const HomeScreen: React.FC = () => {
 
   // Fixed onLeft - remove from list and add to rejected collection
   const onLeft = useCallback(() => {
+    // Tắt vùng màu neon ngay lập tức
+    setLikeZoneOpacity(0);
+    setNopeZoneOpacity(0);
+    
     // Prevent multiple simultaneous swipes
     if (isSwipingRef.current) return;
     isSwipingRef.current = true;
@@ -239,33 +243,37 @@ const HomeScreen: React.FC = () => {
     addRejected(current);
     setHistory((prev) => [...prev, { item: current, index: currentIndex, action: 'left' }]);
     
-    // Remove from main list and update activeIndex
-    setOutfits((prev) => {
-      const newList = prev.filter((o) => o.id !== current.id);
-      // Adjust activeIndex immediately
-      if (newList.length === 0) {
-        setActiveIndex(0);
-      } else if (currentIndex === 0) {
-        // If removing first item, stay at index 0 (which will be the new first item)
-        setActiveIndex(0);
-      } else if (currentIndex >= newList.length) {
-        // If removing last item, move to new last
-        setActiveIndex(newList.length - 1);
-      } else {
-        // If removing middle item, stay at same index (which will be the next item)
-        setActiveIndex(currentIndex);
-      }
-      return newList;
-    });
-    
-    // Reset swiping flag after animation
+    // Delay removal để animation mượt hơn - đợi card animate ra ngoài xong mới xóa
     setTimeout(() => {
+      setOutfits((prev) => {
+        const newList = prev.filter((o) => o.id !== current.id);
+        // Adjust activeIndex immediately
+        if (newList.length === 0) {
+          setActiveIndex(0);
+        } else if (currentIndex === 0) {
+          // If removing first item, stay at index 0 (which will be the new first item)
+          setActiveIndex(0);
+        } else if (currentIndex >= newList.length) {
+          // If removing last item, move to new last
+          setActiveIndex(newList.length - 1);
+        } else {
+          // If removing middle item, stay at same index (which will be the next item)
+          setActiveIndex(currentIndex);
+        }
+        return newList;
+      });
+      
+      // Reset swiping flag after removal
       isSwipingRef.current = false;
-    }, 350);
-  }, [activeIndex, outfits, goNext, addRejected]);
+    }, 260); // Slightly longer than animation duration (250ms)
+  }, [activeIndex, outfits, addRejected]);
 
   // Fixed onRight - remove from list and add to accepted collection
   const onRight = useCallback(() => {
+    // Tắt vùng màu neon ngay lập tức
+    setLikeZoneOpacity(0);
+    setNopeZoneOpacity(0);
+    
     // Prevent multiple simultaneous swipes
     if (isSwipingRef.current) return;
     isSwipingRef.current = true;
@@ -281,30 +289,30 @@ const HomeScreen: React.FC = () => {
     addAccepted(current);
     setHistory((prev) => [...prev, { item: current, index: currentIndex, action: 'right' }]);
     
-    // Remove from main list and update activeIndex
-    setOutfits((prev) => {
-      const newList = prev.filter((o) => o.id !== current.id);
-      // Adjust activeIndex immediately
-      if (newList.length === 0) {
-        setActiveIndex(0);
-      } else if (currentIndex === 0) {
-        // If removing first item, stay at index 0 (which will be the new first item)
-        setActiveIndex(0);
-      } else if (currentIndex >= newList.length) {
-        // If removing last item, move to new last
-        setActiveIndex(newList.length - 1);
-      } else {
-        // If removing middle item, stay at same index (which will be the next item)
-        setActiveIndex(currentIndex);
-      }
-      return newList;
-    });
-    
-    // Reset swiping flag after animation
+    // Delay removal để animation mượt hơn - đợi card animate ra ngoài xong mới xóa
     setTimeout(() => {
+      setOutfits((prev) => {
+        const newList = prev.filter((o) => o.id !== current.id);
+        // Adjust activeIndex immediately
+        if (newList.length === 0) {
+          setActiveIndex(0);
+        } else if (currentIndex === 0) {
+          // If removing first item, stay at index 0 (which will be the new first item)
+          setActiveIndex(0);
+        } else if (currentIndex >= newList.length) {
+          // If removing last item, move to new last
+          setActiveIndex(newList.length - 1);
+        } else {
+          // If removing middle item, stay at same index (which will be the next item)
+          setActiveIndex(currentIndex);
+        }
+        return newList;
+      });
+      
+      // Reset swiping flag after removal
       isSwipingRef.current = false;
-    }, 350);
-  }, [activeIndex, outfits, goNext, addAccepted]);
+    }, 260); // Slightly longer than animation duration (250ms)
+  }, [activeIndex, outfits, addAccepted]);
 
   const undo = useCallback(() => {
     if (!history.length) return;
