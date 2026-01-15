@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   FlatList,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -21,11 +22,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 const Icon = MaterialCommunityIcons;
 
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppText } from '../../components/AppText';
+import { AppText, BottomNavigationBar, Avatar } from '../../components';
 import { GradientBackground } from '../../components';
 import { MainStackParamList } from '../../navigation/types';
-import { ROUTES } from '../../constants/routes';
+import { ROUTES, TAB_ROUTES } from '../../constants/routes';
 import { spacing as spacingConstants } from '../../constants/theme';
+import { useAuthStore } from '../../features/authStore';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
@@ -205,6 +207,8 @@ const mockPosts: Post[] = [
 const SocialScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { colors, spacing, borderRadius, blur } = useAppTheme();
+  const { user } = useAuthStore();
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const [posts, setPosts] = useState<Post[]>(mockPosts);
   const [stories] = useState<Story[]>(mockStories);
@@ -490,30 +494,37 @@ const SocialScreen: React.FC = () => {
       <SafeAreaView style={styles.container} edges={['top']}>
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: spacing.xl, paddingTop: spacing.lg }]}>
+          <View style={{ width: 46 }} />
+          <AppText variant="display" overlay style={styles.headerTitle}>
+            Social
+          </AppText>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              // Navigate to Profile tab
+              navigation.getParent()?.navigate('MainTabs', { screen: TAB_ROUTES.PROFILE });
+            }}
             style={[styles.headerButton, { borderColor: colors.glassBorder, borderRadius: borderRadius.full }]}
           >
             {Platform.OS === 'ios' ? (
               <BlurView intensity={blur.medium} tint="light" style={styles.headerButtonInner}>
-                <Icon name="arrow-left" size={22} color="rgba(255,255,255,0.95)" />
+                <Avatar name={user?.name || 'U'} size={28} />
               </BlurView>
             ) : (
               <View style={[styles.headerButtonInner, styles.headerButtonAndroid]}>
-                <Icon name="arrow-left" size={22} color="rgba(255,255,255,0.95)" />
+                <Avatar name={user?.name || 'U'} size={28} />
               </View>
             )}
           </TouchableOpacity>
-          <AppText variant="display" overlay style={styles.headerTitle}>
-            Social
-          </AppText>
-          <View style={{ width: 46 }} />
         </View>
 
-        <ScrollView
+        <Animated.ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+            useNativeDriver: false,
+          })}
+          scrollEventThrottle={16}
         >
           {/* Stories Section */}
           <View style={[styles.storiesSection, { paddingHorizontal: spacing.lg, marginBottom: spacing.lg }]}>
@@ -605,7 +616,10 @@ const SocialScreen: React.FC = () => {
               contentContainerStyle={[styles.feedList, { paddingHorizontal: spacing.lg }]}
             />
           </View>
-        </ScrollView>
+        </Animated.ScrollView>
+
+        {/* Bottom Navigation Bar */}
+        <BottomNavigationBar scrollY={scrollY} showOnScrollUp={true} />
 
         {/* Comments Modal */}
         <Modal

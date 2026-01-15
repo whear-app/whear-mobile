@@ -19,6 +19,7 @@ export const brandColors = {
 
   // accent
   accent: '#14B8A6', // Teal (stylist/AI vibe)
+  accentLight: 'rgba(20, 184, 166, 0.15)',
   success: '#22C55E',
   warning: '#F59E0B',
   error: '#EF4444',
@@ -37,6 +38,7 @@ export const darkBrandColors = {
   glassBorder: 'rgba(255,255,255,0.16)',
 
   accent: '#14B8A6',
+  accentLight: 'rgba(20, 184, 166, 0.15)',
   success: '#22C55E',
   warning: '#F59E0B',
   error: '#EF4444',

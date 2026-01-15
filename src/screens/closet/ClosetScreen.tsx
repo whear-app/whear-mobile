@@ -4,13 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppText, LoadingSpinner, EmptyState, TagChip, GradientBackground, StoryChip } from '../../components';
-import { ROUTES } from '../../constants/routes';
+import { AppText, LoadingSpinner, EmptyState, TagChip, GradientBackground, StoryChip, Avatar } from '../../components';
+import { ROUTES, TAB_ROUTES } from '../../constants/routes';
 import { MainStackParamList } from '../../navigation/types';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
 import { useAuthStore } from '../../features/authStore';
 import { useClosetStore } from '../../features/closetStore';
 import { ClosetItem, ItemCategory } from '../../models';
+import { BlurView } from 'expo-blur';
+import { Platform } from 'react-native';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
@@ -20,7 +22,7 @@ export const ClosetScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuthStore();
   const { items, isLoading, viewMode, filters, fetchItems, setViewMode, setFilters } = useClosetStore();
-  const { colors, spacing, borderRadius } = useAppTheme();
+  const { colors, spacing, borderRadius, blur } = useAppTheme();
   const [selectedCategory, setSelectedCategory] = React.useState<ItemCategory | 'all'>('all');
 
   useEffect(() => {
@@ -128,21 +130,56 @@ export const ClosetScreen: React.FC = () => {
       <SafeAreaView style={styles.container} edges={['top']}>
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.lg }]}>
+          <View style={{ width: 46 }} />
           <AppText variant="display" style={{ fontWeight: '700' }}>My Closet</AppText>
           <View style={styles.headerActions}>
             <TouchableOpacity
               onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              style={styles.headerButton}
+              style={[styles.headerButton, { borderColor: colors.glassBorder, borderRadius: borderRadius.full }]}
             >
-              <Text style={[styles.headerIcon, { color: colors.textPrimary }]}>
-                {viewMode === 'grid' ? '☰' : '⊞'}
-              </Text>
+              {Platform.OS === 'ios' ? (
+                <BlurView intensity={blur.medium} tint="light" style={styles.headerButtonInner}>
+                  <Text style={[styles.headerIcon, { color: colors.textPrimary }]}>
+                    {viewMode === 'grid' ? '☰' : '⊞'}
+                  </Text>
+                </BlurView>
+              ) : (
+                <View style={[styles.headerButtonInner, { backgroundColor: colors.glassSurface }]}>
+                  <Text style={[styles.headerIcon, { color: colors.textPrimary }]}>
+                    {viewMode === 'grid' ? '☰' : '⊞'}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => navigation.navigate(ROUTES.ADD_ITEM)}
-              style={styles.headerButton}
+              style={[styles.headerButton, { borderColor: colors.glassBorder, borderRadius: borderRadius.full }]}
             >
-              <Text style={[styles.headerIcon, { color: colors.textPrimary }]}>+</Text>
+              {Platform.OS === 'ios' ? (
+                <BlurView intensity={blur.medium} tint="light" style={styles.headerButtonInner}>
+                  <Text style={[styles.headerIcon, { color: colors.textPrimary }]}>+</Text>
+                </BlurView>
+              ) : (
+                <View style={[styles.headerButtonInner, { backgroundColor: colors.glassSurface }]}>
+                  <Text style={[styles.headerIcon, { color: colors.textPrimary }]}>+</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                navigation.getParent()?.navigate('MainTabs', { screen: TAB_ROUTES.PROFILE });
+              }}
+              style={[styles.headerButton, { borderColor: colors.glassBorder, borderRadius: borderRadius.full }]}
+            >
+              {Platform.OS === 'ios' ? (
+                <BlurView intensity={blur.medium} tint="light" style={styles.headerButtonInner}>
+                  <Avatar name={user?.name || 'U'} size={28} />
+                </BlurView>
+              ) : (
+                <View style={[styles.headerButtonInner, { backgroundColor: colors.glassSurface }]}>
+                  <Avatar name={user?.name || 'U'} size={28} />
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -210,12 +247,15 @@ const styles = StyleSheet.create({
     gap: spacingConstants.md,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
+    width: 46,
+    height: 46,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+  },
+  headerButtonInner: {
+    flex: 1,
     alignItems: 'center',
-    borderRadius: borderRadiusConstants.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
   },
   headerIcon: {
     fontSize: 20,
