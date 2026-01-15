@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -26,7 +26,7 @@ import { AppText, BottomNavigationBar, Avatar } from '../../components';
 import { GradientBackground } from '../../components';
 import { MainStackParamList } from '../../navigation/types';
 import { ROUTES, TAB_ROUTES } from '../../constants/routes';
-import { spacing as spacingConstants } from '../../constants/theme';
+import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
 import { useAuthStore } from '../../features/authStore';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -216,6 +216,17 @@ const SocialScreen: React.FC = () => {
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<{ commentId: string; userName: string } | null>(null);
+  
+  // Story viewer state
+  const [storyModalVisible, setStoryModalVisible] = useState(false);
+  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
+  const [storyProgress, setStoryProgress] = useState(0);
+  const storyProgressAnim = useRef(new Animated.Value(0)).current;
+  const storyTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Post detail modal state
+  const [postDetailModalVisible, setPostDetailModalVisible] = useState(false);
+  const [selectedPostDetail, setSelectedPostDetail] = useState<Post | null>(null);
 
   const handleLikePost = useCallback((postId: string) => {
     setPosts((prev) =>
@@ -291,6 +302,26 @@ const SocialScreen: React.FC = () => {
       );
     }
 
+    // Update selectedPost to reflect new comment
+    setSelectedPost((prev) => {
+      if (!prev) return null;
+      if (replyingTo) {
+        const addReply = (comments: Comment[]): Comment[] =>
+          comments.map((c) => {
+            if (c.id === replyingTo.commentId) {
+              return { ...c, replies: [...(c.replies || []), comment] };
+            }
+            if (c.replies) {
+              return { ...c, replies: addReply(c.replies) };
+            }
+            return c;
+          });
+        return { ...prev, comments: addReply(prev.comments) };
+      } else {
+        return { ...prev, comments: [...prev.comments, comment] };
+      }
+    });
+
     setNewComment('');
     setReplyingTo(null);
   }, [newComment, selectedPost, replyingTo]);
@@ -312,14 +343,94 @@ const SocialScreen: React.FC = () => {
     setCommentModalVisible(true);
   }, []);
 
+  const openPostDetail = useCallback((post: Post) => {
+    setSelectedPostDetail(post);
+    setPostDetailModalVisible(true);
+  }, []);
+
+  const nextStory = useCallback(() => {
+    if (currentStoryIndex < stories.length - 1) {
+      setCurrentStoryIndex((prev) => prev + 1);
+    } else {
+      // End of stories - close modal
+      closeStoryViewer();
+    }
+  }, [currentStoryIndex, stories.length]);
+
+  const prevStory = useCallback(() => {
+    if (currentStoryIndex > 0) {
+      setCurrentStoryIndex((prev) => prev - 1);
+    }
+  }, [currentStoryIndex]);
+
+  const startStoryProgress = useCallback(() => {
+    if (storyTimerRef.current) {
+      clearInterval(storyTimerRef.current);
+    }
+
+    storyProgressAnim.setValue(0);
+    setStoryProgress(0);
+
+    const listenerId = storyProgressAnim.addListener(({ value }) => {
+      setStoryProgress(value);
+    });
+
+    Animated.timing(storyProgressAnim, {
+      toValue: 1,
+      duration: 15000, // 15 seconds per story
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      storyProgressAnim.removeListener(listenerId);
+      if (finished) {
+        nextStory();
+      }
+    });
+  }, [storyProgressAnim, nextStory]);
+
+  const closeStoryViewer = useCallback(() => {
+    if (storyTimerRef.current) {
+      clearInterval(storyTimerRef.current);
+      storyTimerRef.current = null;
+    }
+    storyProgressAnim.stopAnimation();
+    storyProgressAnim.removeAllListeners();
+    setStoryModalVisible(false);
+    setCurrentStoryIndex(0);
+    setStoryProgress(0);
+  }, [storyProgressAnim]);
+
+  const openStoryViewer = useCallback((storyIndex: number) => {
+    setCurrentStoryIndex(storyIndex);
+    setStoryModalVisible(true);
+    setStoryProgress(0);
+    storyProgressAnim.setValue(0);
+  }, [storyProgressAnim]);
+
+  useEffect(() => {
+    if (storyModalVisible) {
+      startStoryProgress();
+    } else {
+      if (storyTimerRef.current) {
+        clearInterval(storyTimerRef.current);
+        storyTimerRef.current = null;
+      }
+      storyProgressAnim.stopAnimation();
+      storyProgressAnim.removeAllListeners();
+    }
+    return () => {
+      if (storyTimerRef.current) {
+        clearInterval(storyTimerRef.current);
+      }
+    };
+  }, [storyModalVisible, currentStoryIndex, startStoryProgress, storyProgressAnim]);
+
   const renderStory = useCallback(
-    ({ item }: { item: Story }) => (
+    ({ item, index }: { item: Story; index: number }) => (
       <TouchableOpacity
         activeOpacity={0.8}
         style={styles.storyContainer}
         onPress={() => {
-          // In real app, this would open story viewer
-          console.log('View story:', item.id);
+          openStoryViewer(index);
         }}
       >
         <View
@@ -346,7 +457,7 @@ const SocialScreen: React.FC = () => {
         </AppText>
       </TouchableOpacity>
     ),
-    []
+    [openStoryViewer]
   );
 
   const renderComment = useCallback(
@@ -411,15 +522,19 @@ const SocialScreen: React.FC = () => {
 
   const renderPost = useCallback(
     ({ item }: { item: Post }) => (
-      <View style={[
-        styles.postCard,
-        {
-          borderRadius: borderRadius.lg,
-          backgroundColor: colors.cardBackground,
-          shadowColor: isDark ? '#000' : '#000',
-          shadowOpacity: isDark ? 0.3 : 0.1,
-        }
-      ]}>
+      <TouchableOpacity
+        activeOpacity={0.95}
+        onPress={() => openPostDetail(item)}
+        style={[
+          styles.postCard,
+          {
+            borderRadius: borderRadius.lg,
+            backgroundColor: colors.cardBackground,
+            shadowColor: isDark ? '#000' : '#000',
+            shadowOpacity: isDark ? 0.3 : 0.1,
+          }
+        ]}
+      >
         {/* Post Header */}
         <View style={styles.postHeader}>
           <View style={styles.postUserInfo}>
@@ -495,9 +610,9 @@ const SocialScreen: React.FC = () => {
             </TouchableOpacity>
           )}
         </View>
-      </View>
+      </TouchableOpacity>
     ),
-    [colors, borderRadius, isDark, handleLikePost, handleShare, handleReport, openComments]
+    [colors, borderRadius, isDark, handleLikePost, handleShare, handleReport, openComments, openPostDetail]
   );
 
   return (
@@ -543,7 +658,7 @@ const SocialScreen: React.FC = () => {
               horizontal
               showsHorizontalScrollIndicator={false}
               data={stories}
-              renderItem={renderStory}
+              renderItem={({ item, index }) => renderStory({ item, index })}
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.storiesList}
             />
@@ -639,6 +754,243 @@ const SocialScreen: React.FC = () => {
         {/* Bottom Navigation Bar */}
         <BottomNavigationBar scrollY={scrollY} showOnScrollUp={true} />
 
+        {/* Story Viewer Modal */}
+        <Modal
+          visible={storyModalVisible}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={closeStoryViewer}
+        >
+          <View style={styles.storyModalContainer}>
+            {/* Progress Bar - Single bar for current story */}
+            <View style={styles.storyProgressContainer}>
+              <View
+                style={[
+                  styles.storyProgressBar,
+                  {
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                  },
+                ]}
+              >
+                <Animated.View
+                  style={[
+                    styles.storyProgressFill,
+                    {
+                      backgroundColor: colors.accent,
+                      width: storyProgressAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0%', '100%'],
+                      }),
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+
+            {/* Story Content */}
+            {stories[currentStoryIndex] && (
+              <View style={styles.storyContent}>
+                <Image
+                  source={{ uri: stories[currentStoryIndex].imageUri }}
+                  style={styles.storyImage}
+                  contentFit="cover"
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.7)']}
+                  style={styles.storyGradient}
+                />
+
+                {/* Story Header */}
+                <View style={styles.storyHeader}>
+                  <View style={styles.storyHeaderLeft}>
+                    <Image
+                      source={{ uri: stories[currentStoryIndex].userAvatar }}
+                      style={styles.storyHeaderAvatar}
+                      contentFit="cover"
+                    />
+                    <AppText overlay variant="body" style={styles.storyHeaderName}>
+                      {stories[currentStoryIndex].userName}
+                    </AppText>
+                    <AppText overlay muted variant="caption" style={styles.storyHeaderTime}>
+                      {stories[currentStoryIndex].isMyStory ? 'Your story' : '2h ago'}
+                    </AppText>
+                  </View>
+                  <TouchableOpacity onPress={closeStoryViewer}>
+                    <Icon name="close" size={28} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Navigation Buttons */}
+                <TouchableOpacity
+                  style={[styles.storyNavButton, styles.storyNavLeft]}
+                  onPress={prevStory}
+                  disabled={currentStoryIndex === 0}
+                >
+                  <View style={{ opacity: currentStoryIndex === 0 ? 0.3 : 1 }} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.storyNavButton, styles.storyNavRight]}
+                  onPress={nextStory}
+                  disabled={currentStoryIndex === stories.length - 1}
+                >
+                  <View style={{ opacity: currentStoryIndex === stories.length - 1 ? 0.3 : 1 }} />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* End of Stories Message */}
+            {currentStoryIndex === stories.length - 1 && storyProgress >= 0.98 && (
+              <View style={styles.storyEndContainer}>
+                <AppText overlay variant="h1" style={styles.storyEndText}>
+                  That's all for now!
+                </AppText>
+                <AppText overlay muted variant="body" style={styles.storyEndSubtext}>
+                  Check back later for more stories
+                </AppText>
+              </View>
+            )}
+          </View>
+        </Modal>
+
+        {/* Post Detail Modal */}
+        <Modal
+          visible={postDetailModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setPostDetailModalVisible(false)}
+        >
+          <SafeAreaView style={styles.postDetailModalContainer} edges={['top', 'bottom']}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={styles.postDetailModalKeyboardView}
+            >
+              <View style={[styles.postDetailModalContent, { backgroundColor: colors.cardBackground }]}>
+              {/* Header */}
+              <View style={styles.postDetailHeader}>
+                <TouchableOpacity onPress={() => setPostDetailModalVisible(false)}>
+                  <Icon name="close" size={28} color={colors.textPrimary} />
+                </TouchableOpacity>
+                <AppText variant="h2" style={{ fontWeight: '700', color: colors.textPrimary }}>
+                  Post
+                </AppText>
+                <View style={{ width: 28 }} />
+              </View>
+
+              {/* Post Content */}
+              {selectedPostDetail && (
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={styles.postDetailScrollContent}
+                >
+                  {/* Post Header */}
+                  <View style={styles.postDetailPostHeader}>
+                    <View style={styles.postDetailUserInfo}>
+                      <Image
+                        source={{ uri: selectedPostDetail.userAvatar }}
+                        style={styles.postDetailAvatar}
+                        contentFit="cover"
+                      />
+                      <View>
+                        <AppText variant="body" style={[styles.postDetailUserName, { color: colors.textPrimary }]}>
+                          {selectedPostDetail.userName}
+                        </AppText>
+                        <AppText variant="caption" style={[styles.postDetailTime, { color: colors.textSecondary }]}>
+                          {selectedPostDetail.timestamp}
+                        </AppText>
+                      </View>
+                    </View>
+                    <TouchableOpacity onPress={() => handleReport(selectedPostDetail.id)}>
+                      <Icon name="dots-horizontal" size={24} color={colors.textPrimary} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Post Image - Larger */}
+                  <Image
+                    source={{ uri: selectedPostDetail.imageUri }}
+                    style={styles.postDetailImage}
+                    contentFit="cover"
+                  />
+
+                  {/* Post Actions */}
+                  <View style={styles.postDetailActions}>
+                    <View style={styles.postDetailActionsLeft}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          handleLikePost(selectedPostDetail.id);
+                          setSelectedPostDetail((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  isLiked: !prev.isLiked,
+                                  likes: prev.isLiked ? prev.likes - 1 : prev.likes + 1,
+                                }
+                              : null
+                          );
+                        }}
+                        style={styles.postDetailActionButton}
+                      >
+                        <Icon
+                          name={selectedPostDetail.isLiked ? 'heart' : 'heart-outline'}
+                          size={32}
+                          color={selectedPostDetail.isLiked ? '#EF4444' : colors.textPrimary}
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setPostDetailModalVisible(false);
+                          openComments(selectedPostDetail);
+                        }}
+                        style={styles.postDetailActionButton}
+                      >
+                        <Icon name="comment-outline" size={32} color={colors.textPrimary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleShare(selectedPostDetail.id)}
+                        style={styles.postDetailActionButton}
+                      >
+                        <Icon name="share-variant-outline" size={32} color={colors.textPrimary} />
+                      </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity onPress={() => handleReport(selectedPostDetail.id)}>
+                      <Icon name="flag-outline" size={24} color={colors.textPrimary} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Post Caption - Expanded */}
+                  <View style={styles.postDetailCaption}>
+                    <AppText variant="body" style={[styles.postDetailLikes, { color: colors.textPrimary }]}>
+                      {selectedPostDetail.likes} {selectedPostDetail.likes === 1 ? 'like' : 'likes'}
+                    </AppText>
+                    <View style={styles.postDetailCaptionText}>
+                      <AppText variant="body" style={[styles.postDetailCaptionUser, { color: colors.textPrimary }]}>
+                        {selectedPostDetail.userName}
+                      </AppText>
+                      <AppText variant="body" style={[styles.postDetailCaptionContent, { color: colors.textPrimary }]}>
+                        {' '}
+                        {selectedPostDetail.caption}
+                      </AppText>
+                    </View>
+                    {selectedPostDetail.comments.length > 0 && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setPostDetailModalVisible(false);
+                          openComments(selectedPostDetail);
+                        }}
+                      >
+                        <AppText variant="caption" style={[styles.postDetailViewComments, { color: colors.textSecondary }]}>
+                          View all {selectedPostDetail.comments.length}{' '}
+                          {selectedPostDetail.comments.length === 1 ? 'comment' : 'comments'}
+                        </AppText>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </ScrollView>
+              )}
+            </View>
+          </KeyboardAvoidingView>
+          </SafeAreaView>
+        </Modal>
+
         {/* Comments Modal */}
         <Modal
           visible={commentModalVisible}
@@ -650,82 +1002,91 @@ const SocialScreen: React.FC = () => {
             setNewComment('');
           }}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.modalContainer}
-          >
-            <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
-              <View style={styles.modalHeader}>
-                <AppText variant="h1" style={styles.modalTitle}>
-                  Comments
-                </AppText>
-                <TouchableOpacity
-                  onPress={() => {
-                    setCommentModalVisible(false);
-                    setReplyingTo(null);
-                    setNewComment('');
-                  }}
-                >
-                  <Icon name="close" size={28} color={colors.textPrimary} />
-                </TouchableOpacity>
-              </View>
-
-              <FlatList
-                data={selectedPost?.comments || []}
-                renderItem={({ item }) => renderComment(item)}
-                keyExtractor={(item) => item.id}
-                style={styles.commentsList}
-                contentContainerStyle={styles.commentsListContent}
-              />
-
-              {replyingTo && (
-                <View style={[
-                  styles.replyingTo,
-                  { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }
-                ]}>
-                  <AppText variant="caption" style={[styles.replyingToText, { color: colors.textSecondary }]}>
-                    Replying to {replyingTo.userName}
+          <SafeAreaView style={styles.modalContainer} edges={['top', 'bottom']}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={styles.modalKeyboardView}
+            >
+              <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
+                <View style={styles.modalHeader}>
+                  <AppText variant="h1" style={styles.modalTitle}>
+                    Comments
                   </AppText>
-                  <TouchableOpacity onPress={() => setReplyingTo(null)}>
-                    <Icon name="close" size={18} color={colors.textSecondary} />
+                  <TouchableOpacity
+                    onPress={() => {
+                      setCommentModalVisible(false);
+                      setReplyingTo(null);
+                      setNewComment('');
+                    }}
+                  >
+                    <Icon name="close" size={28} color={colors.textPrimary} />
                   </TouchableOpacity>
                 </View>
-              )}
 
-              <View style={[
-                styles.commentInputContainer,
-                {
-                  borderColor: colors.glassBorder,
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                }
-              ]}>
-                <TextInput
-                  style={[
-                    styles.commentInput,
-                    {
-                      color: colors.textPrimary,
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                    }
-                  ]}
-                  placeholder="Add a comment..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={newComment}
-                  onChangeText={setNewComment}
-                  multiline
+                <FlatList
+                  data={selectedPost?.comments || []}
+                  renderItem={({ item }) => renderComment(item)}
+                  keyExtractor={(item) => item.id}
+                  style={styles.commentsList}
+                  contentContainerStyle={styles.commentsListContent}
                 />
-                <TouchableOpacity
-                  onPress={handleAddComment}
-                  disabled={!newComment.trim()}
+
+                {replyingTo && (
+                  <View
+                    style={[
+                      styles.replyingTo,
+                      { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
+                    ]}
+                  >
+                    <AppText
+                      variant="caption"
+                      style={[styles.replyingToText, { color: colors.textSecondary }]}
+                    >
+                      Replying to {replyingTo.userName}
+                    </AppText>
+                    <TouchableOpacity onPress={() => setReplyingTo(null)}>
+                      <Icon name="close" size={18} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                <View
                   style={[
-                    styles.commentSendButton,
-                    { opacity: newComment.trim() ? 1 : 0.5 },
+                    styles.commentInputContainer,
+                    {
+                      borderColor: colors.glassBorder,
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                    },
                   ]}
                 >
-                  <Icon name="send" size={24} color={colors.accent} />
-                </TouchableOpacity>
+                  <TextInput
+                    style={[
+                      styles.commentInput,
+                      {
+                        color: colors.textPrimary,
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                      },
+                    ]}
+                    placeholder="Add a comment..."
+                    placeholderTextColor={colors.textSecondary}
+                    value={newComment}
+                    onChangeText={setNewComment}
+                    multiline
+                  />
+                  <TouchableOpacity
+                    onPress={handleAddComment}
+                    disabled={!newComment.trim()}
+                    style={[
+                      styles.commentSendButton,
+                      { opacity: newComment.trim() ? 1 : 0.5 },
+                    ]}
+                  >
+                    <Icon name="send" size={24} color={colors.accent} />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+          </SafeAreaView>
         </Modal>
       </SafeAreaView>
     </GradientBackground>
@@ -929,11 +1290,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
+  modalKeyboardView: {
+    flex: 1,
+  },
   modalContent: {
     flex: 1,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 20,
+    borderRadius: borderRadiusConstants.xl,
+    paddingTop: spacingConstants.md,
+    paddingBottom: spacingConstants.md,
+    marginHorizontal: spacingConstants.md,
+    marginTop: spacingConstants.md,
+    marginBottom: spacingConstants.md,
+    overflow: 'hidden',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1033,6 +1401,201 @@ const styles = StyleSheet.create({
   },
   commentSendButton: {
     padding: spacingConstants.sm,
+  },
+  // Story Modal Styles
+  storyModalContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  storyProgressContainer: {
+    paddingHorizontal: spacingConstants.md,
+    paddingTop: Platform.OS === 'ios' ? 32 : 16,
+    paddingBottom: spacingConstants.sm,
+  },
+  storyProgressBar: {
+    width: '100%',
+    height: 3,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  storyProgressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  storyContent: {
+    flex: 1,
+    position: 'relative',
+    marginHorizontal: spacingConstants.md,
+    marginBottom: spacingConstants.lg,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  storyImage: {
+    width: '100%',
+    height: '100%',
+  },
+  storyGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+  },
+  storyHeader: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 40 : 24,
+    left: spacingConstants.md,
+    right: spacingConstants.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacingConstants.sm,
+    zIndex: 10,
+  },
+  storyHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  storyHeaderAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  storyHeaderName: {
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  storyHeaderTime: {
+    fontSize: 11,
+    marginLeft: 6,
+  },
+  storyNavButton: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: SCREEN_WIDTH / 3,
+    zIndex: 5,
+  },
+  storyNavLeft: {
+    left: 0,
+  },
+  storyNavRight: {
+    right: 0,
+  },
+  storyEndContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  storyEndText: {
+    fontWeight: '900',
+    fontSize: 28,
+    marginBottom: 8,
+  },
+  storyEndSubtext: {
+    fontSize: 16,
+  },
+  // Post Detail Modal Styles
+  postDetailModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  postDetailModalKeyboardView: {
+    flex: 1,
+  },
+  postDetailModalContent: {
+    flex: 1,
+    borderRadius: borderRadiusConstants.xl,
+    marginHorizontal: spacingConstants.md,
+    marginTop: spacingConstants.md,
+    marginBottom: spacingConstants.md,
+    overflow: 'hidden',
+  },
+  postDetailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacingConstants.lg,
+    paddingVertical: spacingConstants.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+  },
+  postDetailScrollContent: {
+    paddingBottom: spacingConstants.xl,
+  },
+  postDetailPostHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacingConstants.lg,
+  },
+  postDetailUserInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  postDetailAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  postDetailUserName: {
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  postDetailTime: {
+    fontSize: 13,
+  },
+  postDetailImage: {
+    width: '100%',
+    height: SCREEN_HEIGHT * 0.6,
+  },
+  postDetailActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacingConstants.lg,
+  },
+  postDetailActionsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  postDetailActionButton: {
+    padding: 4,
+  },
+  postDetailCaption: {
+    paddingHorizontal: spacingConstants.lg,
+    paddingBottom: spacingConstants.lg,
+  },
+  postDetailLikes: {
+    fontWeight: '700',
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  postDetailCaptionText: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 8,
+  },
+  postDetailCaptionUser: {
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  postDetailCaptionContent: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  postDetailViewComments: {
+    marginTop: 8,
+    fontSize: 14,
   },
 });
 
