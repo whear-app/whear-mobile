@@ -13,8 +13,10 @@ import { OutfitHistoryScreen } from '../screens/outfit/OutfitHistoryScreen';
 import { CatalogScreen } from '../screens/catalog/CatalogScreen';
 import { UpgradeScreen } from '../screens/subscription/UpgradeScreen';
 import { CollectionsScreen } from '../screens/home/CollectionsScreen';
+import { WearTodayScreen } from '../screens/home/WearTodayScreen';
 import { SocialScreen } from '../screens/social/SocialScreen';
 import { ClothesStorageScreen } from '../screens/clothes/ClothesStorageScreen';
+import { OnboardingFlowScreen } from '../screens/auth/OnboardingFlowScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
@@ -36,8 +38,10 @@ const MainStack: React.FC = () => {
       <Stack.Screen name={ROUTES.CATALOG} component={CatalogScreen} />
       <Stack.Screen name={ROUTES.UPGRADE} component={UpgradeScreen} />
       <Stack.Screen name={ROUTES.COLLECTIONS} component={CollectionsScreen} />
+      <Stack.Screen name={ROUTES.WEAR_TODAY} component={WearTodayScreen} />
       <Stack.Screen name={ROUTES.SOCIAL} component={SocialScreen} />
       <Stack.Screen name={ROUTES.CLOTHES_STORAGE} component={ClothesStorageScreen} />
+      <Stack.Screen name={ROUTES.ONBOARDING_FLOW as any} component={OnboardingFlowScreen} />
     </Stack.Navigator>
   );
 };

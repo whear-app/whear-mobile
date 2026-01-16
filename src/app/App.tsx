@@ -18,15 +18,18 @@ import { lightTheme, darkTheme } from '../constants/theme';
 import { AuthStack } from '../navigation/AuthStack';
 import { MainStack } from '../navigation/MainStack';
 import { useAuthStore } from '../features/authStore';
+import { useProfileStore } from '../features/profileStore';
 import { useThemeStore } from '../features/themeStore';
 import 'react-native-gesture-handler';
 
 
 const App: React.FC = () => {
-  const { isAuthenticated, checkAuth, isLoading } = useAuthStore();
+  const { isAuthenticated, checkAuth, isLoading, user, justLoggedIn, clearJustLoggedIn } = useAuthStore();
+  const { fetchProfile, profile } = useProfileStore();
   const { themeMode } = useThemeStore();
   const systemColorScheme = useColorScheme();
   const [isReady, setIsReady] = useState(false);
+  const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
   
   // Load fonts
   const [fontsLoaded] = useFonts({
@@ -52,7 +55,77 @@ const App: React.FC = () => {
       }
     };
     initApp();
-  }, [checkAuth]);
+  }, [checkAuth]); // Only run once on mount
+
+  // Check onboarding status when app is ready and user is authenticated
+  // This handles persisted sessions (user already logged in from before)
+  // IMPORTANT: If user just logged in (justLoggedIn = true), skip this check
+  // They should go through onboarding flow first
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      // Only check if:
+      // 1. App is ready
+      // 2. User is authenticated
+      // 3. User exists
+      // 4. User did NOT just log in (justLoggedIn = false) - this means persisted session
+      // 5. We haven't checked onboarding yet
+      if (isReady && isAuthenticated && user && !justLoggedIn && !hasCheckedOnboarding) {
+        try {
+          await fetchProfile(user.id);
+          setHasCheckedOnboarding(true);
+        } catch (error) {
+          // Profile doesn't exist, user needs onboarding
+          setHasCheckedOnboarding(true);
+        }
+      }
+    };
+    checkOnboardingStatus();
+  }, [isReady, isAuthenticated, user, justLoggedIn, hasCheckedOnboarding, fetchProfile]);
+
+  // Reset hasCheckedOnboarding when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setHasCheckedOnboarding(false);
+    }
+  }, [isAuthenticated]);
+
+  // When profile is updated after onboarding, set hasCheckedOnboarding to true
+  // This allows App.tsx to switch to MainStack
+  useEffect(() => {
+    if (isAuthenticated && user && profile && justLoggedIn) {
+      // User just logged in and completed onboarding
+      // Check if profile is complete
+      if (
+        profile.gender &&
+        profile.height &&
+        profile.weight &&
+        profile.stylePreferences &&
+        profile.stylePreferences.length > 0
+      ) {
+        setHasCheckedOnboarding(true);
+        clearJustLoggedIn(); // Clear the flag
+      }
+    }
+  }, [profile, isAuthenticated, user, justLoggedIn, clearJustLoggedIn]);
+
+  // Determine if user should see MainStack or AuthStack
+  // CRITICAL LOGIC:
+  // 1. If user just logged in (justLoggedIn = true), ALWAYS stay in AuthStack for onboarding
+  // 2. If user already logged in before (justLoggedIn = false), check profile completeness
+  // 3. Only show MainStack if:
+  //    - User is authenticated
+  //    - User did NOT just log in (justLoggedIn = false)
+  //    - We have checked onboarding status (hasCheckedOnboarding = true)
+  //    - Profile is complete
+  const shouldShowMainStack = isAuthenticated && 
+    !justLoggedIn && // CRITICAL: Never show MainStack if user just logged in
+    hasCheckedOnboarding && (
+      profile?.gender &&
+      profile?.height &&
+      profile?.weight &&
+      profile?.stylePreferences &&
+      profile.stylePreferences.length > 0
+    );
 
   const getTheme = () => {
     if (themeMode === 'auto') {
@@ -76,7 +149,7 @@ const App: React.FC = () => {
         <PaperProvider theme={getTheme()}>
           <NavigationContainer>
             <StatusBar style={themeMode === 'dark' ? 'light' : 'dark'} />
-            {isAuthenticated ? <MainStack /> : <AuthStack />}
+            {shouldShowMainStack ? <MainStack /> : <AuthStack />}
           </NavigationContainer>
         </PaperProvider>
       </SafeAreaProvider>

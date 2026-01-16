@@ -185,7 +185,7 @@ export const ProfileScreen: React.FC = () => {
             )}
           </AppCard>
 
-          {/* Action Button */}
+          {/* Action Buttons */}
           <View style={[styles.actions, { paddingHorizontal: spacing.lg, marginBottom: spacing.lg }]}>
             <TouchableOpacity
               style={[
@@ -194,12 +194,33 @@ export const ProfileScreen: React.FC = () => {
                   borderColor: colors.glassBorder,
                   backgroundColor: colors.glassSurface,
                   borderRadius: borderRadius.md,
+                  marginBottom: spacing.md,
                 },
               ]}
               onPress={() => navigation.navigate(ROUTES.EDIT_PROFILE)}
               activeOpacity={0.8}
             >
               <AppText variant="body" style={{ fontWeight: '600' }}>Edit Profile</AppText>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.editButton,
+                {
+                  borderColor: colors.accent,
+                  backgroundColor: colors.accentLight,
+                  borderRadius: borderRadius.md,
+                },
+              ]}
+              onPress={() => {
+                // Navigate to onboarding flow (now available in MainStack)
+                navigation.navigate(ROUTES.ONBOARDING_FLOW);
+              }}
+              activeOpacity={0.8}
+            >
+              <AppText variant="body" style={{ fontWeight: '600', color: colors.accent }}>
+                Complete Onboarding
+              </AppText>
             </TouchableOpacity>
           </View>
 

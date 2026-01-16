@@ -12,6 +12,7 @@ import { ROUTES } from '../../constants/routes';
 import { AuthStackParamList } from '../../navigation/types';
 import { spacing as spacingConstants } from '../../constants/theme';
 import { useAuthStore } from '../../features/authStore';
+import { useProfileStore } from '../../features/profileStore';
 import { useSnackbar } from '../../hooks/useSnackbar';
 
 const loginSchema = z.object({
@@ -24,7 +25,8 @@ type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export const LoginScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { login, isLoading } = useAuthStore();
+  const { login, isLoading, user } = useAuthStore();
+  const { fetchProfile, profile } = useProfileStore();
   const { showSnackbar } = useSnackbar();
   const { colors, spacing } = useAppTheme();
 
@@ -43,6 +45,9 @@ export const LoginScreen: React.FC = () => {
   const onSubmit = async (data: FormData) => {
     try {
       await login(data.email, data.password);
+      // After successful login, navigate to onboarding flow
+      // OnboardingFlowScreen will check if profile is complete and navigate accordingly
+      navigation.navigate(ROUTES.ONBOARDING_FLOW);
     } catch (error) {
       showSnackbar((error as Error).message, 'error');
     }

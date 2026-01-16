@@ -3,6 +3,7 @@ import { ROUTES, TAB_ROUTES } from '../constants/routes';
 
 export type AuthStackParamList = {
   [ROUTES.ONBOARDING]: undefined;
+  [ROUTES.ONBOARDING_FLOW]: undefined;
   [ROUTES.REGISTER]: undefined;
   [ROUTES.LOGIN]: undefined;
   [ROUTES.VERIFY_ACCOUNT]: { email: string };
@@ -36,6 +37,7 @@ export type MainStackParamList = {
   [ROUTES.SOCIAL]: undefined;
   [ROUTES.WEAR_TODAY]: undefined;
   [ROUTES.CLOTHES_STORAGE]: undefined;
+  [ROUTES.ONBOARDING_FLOW]: undefined;
 };
 
 export type RootStackParamList = {
