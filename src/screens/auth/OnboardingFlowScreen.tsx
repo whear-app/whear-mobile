@@ -20,6 +20,7 @@ import { AuthStackParamList } from '../../navigation/types';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
 import { useAuthStore } from '../../features/authStore';
 import { useProfileStore } from '../../features/profileStore';
+import { useTranslation } from 'react-i18next';
 
 const Icon = MaterialCommunityIcons;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -39,13 +40,14 @@ interface OnboardingData {
   stylePreferences?: string[];
 }
 
-const bodyShapes: { value: BodyShape; label: string; description: string; image: string }[] = [
-  { value: 'hourglass', label: 'Đồng hồ cát', description: 'Eo nhỏ, vai và hông cân đối', image: 'https://images.unsplash.com/photo-1594736797933-d0c0d0e0e0e0?w=300&h=400&fit=crop' },
-  { value: 'rectangle', label: 'Hình chữ nhật', description: 'Vai, eo, hông gần bằng nhau', image: 'https://images.unsplash.com/photo-1594736797933-d0c0d0e0e0e0?w=300&h=400&fit=crop' },
-  { value: 'pear', label: 'Quả lê', description: 'Hông rộng hơn vai', image: 'https://images.unsplash.com/photo-1594736797933-d0c0d0e0e0e0?w=300&h=400&fit=crop' },
-  { value: 'apple', label: 'Quả táo', description: 'Vai và eo rộng, hông nhỏ', image: 'https://images.unsplash.com/photo-1594736797933-d0c0d0e0e0e0?w=300&h=400&fit=crop' },
-  { value: 'inverted-triangle', label: 'Tam giác ngược', description: 'Vai rộng hơn hông', image: 'https://images.unsplash.com/photo-1594736797933-d0c0d0e0e0e0?w=300&h=400&fit=crop' },
-  { value: 'oval', label: 'Oval', description: 'Eo rộng nhất, vai và hông nhỏ hơn', image: 'https://images.unsplash.com/photo-1594736797933-d0c0d0e0e0e0?w=300&h=400&fit=crop' },
+// Body shapes will be translated dynamically using i18n
+const getBodyShapes = (t: any): { value: BodyShape; label: string; description: string; image: string }[] => [
+  { value: 'hourglass', label: t('bodyShapes.hourglass'), description: t('bodyShapes.hourglassDesc'), image: 'https://images.unsplash.com/photo-1594736797933-d0c0d0e0e0e0?w=300&h=400&fit=crop' },
+  { value: 'rectangle', label: t('bodyShapes.rectangle'), description: t('bodyShapes.rectangleDesc'), image: 'https://images.unsplash.com/photo-1594736797933-d0c0d0e0e0e0?w=300&h=400&fit=crop' },
+  { value: 'pear', label: t('bodyShapes.pear'), description: t('bodyShapes.pearDesc'), image: 'https://images.unsplash.com/photo-1594736797933-d0c0d0e0e0e0?w=300&h=400&fit=crop' },
+  { value: 'apple', label: t('bodyShapes.apple'), description: t('bodyShapes.appleDesc'), image: 'https://images.unsplash.com/photo-1594736797933-d0c0d0e0e0e0?w=300&h=400&fit=crop' },
+  { value: 'inverted-triangle', label: t('bodyShapes.invertedTriangle'), description: t('bodyShapes.invertedTriangleDesc'), image: 'https://images.unsplash.com/photo-1594736797933-d0c0d0e0e0e0?w=300&h=400&fit=crop' },
+  { value: 'oval', label: t('bodyShapes.oval'), description: t('bodyShapes.ovalDesc'), image: 'https://images.unsplash.com/photo-1594736797933-d0c0d0e0e0e0?w=300&h=400&fit=crop' },
 ];
 
 const styleOptions: { value: string; label: string; image: string }[] = [
@@ -60,6 +62,7 @@ const styleOptions: { value: string; label: string; image: string }[] = [
 ];
 
 export const OnboardingFlowScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuthStore();
   const { updateProfile, fetchProfile, profile } = useProfileStore();
@@ -164,10 +167,10 @@ export const OnboardingFlowScreen: React.FC = () => {
   const renderStep1 = () => (
     <View style={styles.stepContainer}>
       <AppText variant="h1" style={{ fontWeight: '700', marginBottom: spacing.sm, textAlign: 'center' }}>
-        Choose Your Gender
+        {t('onboarding.chooseGender')}
       </AppText>
       <AppText variant="body" color={colors.textSecondary} style={{ marginBottom: spacing.xl, textAlign: 'center' }}>
-        This information helps us suggest the right style for you
+        {t('onboarding.genderDescription')}
       </AppText>
 
       <View style={styles.genderContainer}>
@@ -187,7 +190,7 @@ export const OnboardingFlowScreen: React.FC = () => {
             <Icon name="gender-male" size={80} color={colors.accent} />
           </View>
           <AppText variant="h3" style={{ fontWeight: '600', marginTop: spacing.md }}>
-            Male
+            {t('onboarding.male')}
           </AppText>
         </TouchableOpacity>
 
@@ -207,7 +210,7 @@ export const OnboardingFlowScreen: React.FC = () => {
             <Icon name="gender-female" size={80} color={colors.accent} />
           </View>
           <AppText variant="h3" style={{ fontWeight: '600', marginTop: spacing.md }}>
-            Female
+            {t('onboarding.female')}
           </AppText>
         </TouchableOpacity>
       </View>
@@ -217,17 +220,17 @@ export const OnboardingFlowScreen: React.FC = () => {
   const renderStep2 = () => (
     <View style={styles.stepContainer}>
       <AppText variant="h1" style={{ fontWeight: '700', marginBottom: spacing.sm, textAlign: 'center' }}>
-        Body Information
+        {t('onboarding.bodyInformation')}
       </AppText>
       <AppText variant="body" color={colors.textSecondary} style={{ marginBottom: spacing.xl, textAlign: 'center' }}>
-        Enter your information for the best recommendations
+        {t('onboarding.bodyDescription')}
       </AppText>
 
       <View style={styles.inputGroup}>
         <View style={styles.inputRow}>
           <View style={[styles.inputContainer, { flex: 1, marginRight: spacing.md }]}>
             <AppText variant="body" style={[styles.inputLabel, { fontWeight: '600', marginBottom: spacing.sm }]}>
-              Height (cm)
+              {t('onboarding.height')}
             </AppText>
             <TextInput
               style={[
@@ -241,7 +244,7 @@ export const OnboardingFlowScreen: React.FC = () => {
               ]}
               value={data.height}
               onChangeText={(text) => updateData({ height: text })}
-              placeholder="e.g. 170"
+              placeholder={t('onboarding.heightPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
             />
@@ -249,7 +252,7 @@ export const OnboardingFlowScreen: React.FC = () => {
 
           <View style={[styles.inputContainer, { flex: 1 }]}>
             <AppText variant="body" style={[styles.inputLabel, { fontWeight: '600', marginBottom: spacing.sm }]}>
-              Weight (kg)
+              {t('onboarding.weight')}
             </AppText>
             <TextInput
               style={[
@@ -263,7 +266,7 @@ export const OnboardingFlowScreen: React.FC = () => {
               ]}
               value={data.weight}
               onChangeText={(text) => updateData({ weight: text })}
-              placeholder="e.g. 60"
+              placeholder={t('onboarding.weightPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
             />
@@ -274,7 +277,7 @@ export const OnboardingFlowScreen: React.FC = () => {
           <>
             <View style={styles.inputContainer}>
               <AppText variant="body" style={[styles.inputLabel, { fontWeight: '600', marginBottom: spacing.sm }]}>
-                Bust (cm)
+                {t('onboarding.bust')}
               </AppText>
               <TextInput
                 style={[
@@ -288,7 +291,7 @@ export const OnboardingFlowScreen: React.FC = () => {
                 ]}
                 value={data.bust}
                 onChangeText={(text) => updateData({ bust: text })}
-                placeholder="e.g. 90"
+                placeholder={t('onboarding.bustPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 keyboardType="numeric"
               />
@@ -296,7 +299,7 @@ export const OnboardingFlowScreen: React.FC = () => {
 
             <View style={styles.inputContainer}>
               <AppText variant="body" style={[styles.inputLabel, { fontWeight: '600', marginBottom: spacing.sm }]}>
-                Waist (cm)
+                {t('onboarding.waist')}
               </AppText>
               <TextInput
                 style={[
@@ -310,7 +313,7 @@ export const OnboardingFlowScreen: React.FC = () => {
                 ]}
                 value={data.waist}
                 onChangeText={(text) => updateData({ waist: text })}
-                placeholder="e.g. 70"
+                placeholder={t('onboarding.waistPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 keyboardType="numeric"
               />
@@ -318,7 +321,7 @@ export const OnboardingFlowScreen: React.FC = () => {
 
             <View style={styles.inputContainer}>
               <AppText variant="body" style={[styles.inputLabel, { fontWeight: '600', marginBottom: spacing.sm }]}>
-                Hips (cm)
+                {t('onboarding.hips')}
               </AppText>
               <TextInput
                 style={[
@@ -332,7 +335,7 @@ export const OnboardingFlowScreen: React.FC = () => {
                 ]}
                 value={data.hips}
                 onChangeText={(text) => updateData({ hips: text })}
-                placeholder="e.g. 95"
+                placeholder={t('onboarding.hipsPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 keyboardType="numeric"
               />
@@ -343,20 +346,22 @@ export const OnboardingFlowScreen: React.FC = () => {
     </View>
   );
 
-  const renderStep3 = () => (
-    <View style={styles.stepContainer}>
-      <AppText variant="h1" style={{ fontWeight: '700', marginBottom: spacing.sm, textAlign: 'center' }}>
-        Your Body Shape
-      </AppText>
-      <AppText variant="body" color={colors.textSecondary} style={{ marginBottom: spacing.xl, textAlign: 'center' }}>
-        Choose the body shape that best fits you
-      </AppText>
+  const renderStep3 = () => {
+    const bodyShapes = getBodyShapes(t);
+    return (
+      <View style={styles.stepContainer}>
+        <AppText variant="h1" style={{ fontWeight: '700', marginBottom: spacing.sm, textAlign: 'center' }}>
+          {t('onboarding.bodyShape')}
+        </AppText>
+        <AppText variant="body" color={colors.textSecondary} style={{ marginBottom: spacing.xl, textAlign: 'center' }}>
+          {t('onboarding.bodyShapeDescription')}
+        </AppText>
 
-      <ScrollView
-        contentContainerStyle={styles.bodyShapeGrid}
-        showsVerticalScrollIndicator={false}
-      >
-        {bodyShapes.map((shape) => (
+        <ScrollView
+          contentContainerStyle={styles.bodyShapeGrid}
+          showsVerticalScrollIndicator={false}
+        >
+          {bodyShapes.map((shape) => (
           <TouchableOpacity
             key={shape.value}
             style={[
@@ -389,18 +394,19 @@ export const OnboardingFlowScreen: React.FC = () => {
               </View>
             )}
           </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
 
   const renderStep4 = () => (
     <View style={styles.stepContainer}>
       <AppText variant="h1" style={{ fontWeight: '700', marginBottom: spacing.sm, textAlign: 'center' }}>
-        Style Preferences
+        {t('onboarding.stylePreferences')}
       </AppText>
       <AppText variant="body" color={colors.textSecondary} style={{ marginBottom: spacing.xl, textAlign: 'center' }}>
-        Choose one or more styles you like
+        {t('onboarding.stylePreferencesDescription')}
       </AppText>
 
       <ScrollView
@@ -483,7 +489,7 @@ export const OnboardingFlowScreen: React.FC = () => {
             />
           </View>
           <AppText variant="caption" color={colors.textSecondary} style={{ marginTop: spacing.xs }}>
-            Step {currentStep} / {totalSteps}
+            {t('onboarding.step')} {currentStep} {t('onboarding.of')} {totalSteps}
           </AppText>
         </View>
 
@@ -499,14 +505,14 @@ export const OnboardingFlowScreen: React.FC = () => {
         {/* Navigation Buttons */}
         <View style={[styles.navigation, { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }]}>
           <AppButton
-            label={currentStep === totalSteps ? 'Complete' : 'Next'}
+            label={currentStep === totalSteps ? t('common.complete') : t('common.next')}
             onPress={handleNext}
             disabled={!canProceed()}
             style={[styles.navButton, { width: '100%', marginBottom: currentStep > 1 ? spacing.md : 0 }]}
           />
           {currentStep > 1 && (
             <AppButton
-              label="Back"
+              label={t('common.back')}
               variant="glass"
               onPress={handleBack}
               style={[styles.navButton, { width: '100%' }]}
@@ -514,7 +520,7 @@ export const OnboardingFlowScreen: React.FC = () => {
           )}
           {!canProceed() && currentStep === 1 && (
             <AppText variant="caption" color={colors.textSecondary} style={{ textAlign: 'center', marginTop: spacing.xs, width: '100%' }}>
-              Please select your gender to continue
+              {t('onboarding.pleaseSelectGender')}
             </AppText>
           )}
         </View>

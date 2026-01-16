@@ -118,12 +118,12 @@ export const ClothesStorageScreen: React.FC = () => {
 
   const handlePickImage = async () => {
     Alert.alert(
-      'Select Image',
-      'Choose an option',
+      t('common.selectImage') || 'Select Image',
+      t('common.chooseOption') || 'Choose an option',
       [
-        { text: 'Camera', onPress: takePhoto },
-        { text: 'Gallery', onPress: pickImage },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.camera') || 'Camera', onPress: takePhoto },
+        { text: t('common.gallery') || 'Gallery', onPress: pickImage },
+        { text: t('common.cancel'), style: 'cancel' },
       ]
     );
   };

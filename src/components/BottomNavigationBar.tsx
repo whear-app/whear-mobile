@@ -8,6 +8,7 @@ const Icon = MaterialCommunityIcons;
 import { useAppTheme } from '../hooks/useAppTheme';
 import { ROUTES } from '../constants/routes';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../constants/theme';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -22,22 +23,25 @@ interface NavItem {
   label: string;
 }
 
-const navItems: NavItem[] = [
-  { route: ROUTES.SOCIAL, icon: 'account-group', label: 'Social' },
-  { route: 'MainTabs', icon: 'tshirt-crew', label: 'Today' }, // Navigate to MainTabs with HOME tab
-  { route: ROUTES.COLLECTIONS, icon: 'heart', label: 'Collections' },
-  { route: ROUTES.CLOTHES_STORAGE, icon: 'wardrobe', label: 'Storage' },
+// Nav items will be translated dynamically
+const getNavItems = (t: any): NavItem[] => [
+  { route: ROUTES.SOCIAL, icon: 'account-group', label: t('social.social') },
+  { route: 'MainTabs', icon: 'tshirt-crew', label: t('today.today') }, // Navigate to MainTabs with HOME tab
+  { route: ROUTES.COLLECTIONS, icon: 'heart', label: t('collections.collections') },
+  { route: ROUTES.CLOTHES_STORAGE, icon: 'wardrobe', label: t('clothesStorage.clothesStorage') },
 ];
 
 export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   scrollY,
   showOnScrollUp = true,
 }) => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
   const { colors, borderRadius, blur, isDark } = useAppTheme();
   const translateY = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
+  const navItems = getNavItems(t);
 
   useEffect(() => {
     if (!scrollY || !showOnScrollUp) return;
