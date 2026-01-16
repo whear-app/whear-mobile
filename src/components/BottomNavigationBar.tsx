@@ -26,6 +26,7 @@ const navItems: NavItem[] = [
   { route: ROUTES.SOCIAL, icon: 'account-group', label: 'Social' },
   { route: 'MainTabs', icon: 'tshirt-crew', label: 'Today' }, // Navigate to MainTabs with HOME tab
   { route: ROUTES.COLLECTIONS, icon: 'heart', label: 'Collections' },
+  { route: ROUTES.CLOTHES_STORAGE, icon: 'wardrobe', label: 'Storage' },
 ];
 
 export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
@@ -86,6 +87,10 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
     
     if (routeName === ROUTES.COLLECTIONS) {
       return currentRoute === 'Collections';
+    }
+    
+    if (routeName === ROUTES.CLOTHES_STORAGE) {
+      return currentRoute === 'ClothesStorage';
     }
     
     return false;

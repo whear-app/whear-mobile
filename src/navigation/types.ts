@@ -35,6 +35,7 @@ export type MainStackParamList = {
   [ROUTES.COLLECTIONS]: undefined;
   [ROUTES.SOCIAL]: undefined;
   [ROUTES.WEAR_TODAY]: undefined;
+  [ROUTES.CLOTHES_STORAGE]: undefined;
 };
 
 export type RootStackParamList = {
