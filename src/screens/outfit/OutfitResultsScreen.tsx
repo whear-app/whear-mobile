@@ -10,10 +10,12 @@ import { MainStackParamList } from '../../navigation/types';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
 import { useOutfitStore } from '../../features/outfitStore';
 import { Outfit } from '../../models';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
 export const OutfitResultsScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { generatedOutfits } = useOutfitStore();
   const { colors, spacing, borderRadius } = useAppTheme();
@@ -52,8 +54,8 @@ export const OutfitResultsScreen: React.FC = () => {
         <SafeAreaView style={styles.container} edges={['top']}>
           <EmptyState
             icon="tshirt-crew"
-            title="No outfits generated"
-            message="Generate some outfits to see them here"
+            title={t('outfit.noOutfits')}
+            message={t('outfit.generateToSee')}
           />
         </SafeAreaView>
       </GradientBackground>
@@ -65,7 +67,7 @@ export const OutfitResultsScreen: React.FC = () => {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.lg }]}>
           <AppText variant="display" style={{ fontWeight: '700', color: colors.textPrimary }}>
-            Outfit Suggestions
+            {t('outfit.outfitResults')}
           </AppText>
         </View>
 

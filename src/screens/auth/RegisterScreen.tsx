@@ -26,14 +26,17 @@ const registerSchema = z
     path: ['confirmPassword'],
   });
 
-type FormData = z.infer<typeof registerSchema>;
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export const RegisterScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { register: registerUser, isLoading } = useAuthStore();
   const { showSnackbar } = useSnackbar();
   const { colors, spacing } = useAppTheme();
+
+  const registerSchema = createRegisterSchema(t);
+  type FormData = z.infer<typeof registerSchema>;
 
   const {
     control,
@@ -68,7 +71,7 @@ export const RegisterScreen: React.FC = () => {
               <View style={styles.header}>
                 <Text style={[styles.logo, { color: colors.textPrimary }]}>Whear</Text>
                 <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                  Create your account
+                  {t('auth.createAccount')}
                 </Text>
               </View>
 
@@ -78,7 +81,7 @@ export const RegisterScreen: React.FC = () => {
                   name="name"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <AppInput
-                      label="Full Name"
+                      label={t('auth.fullName')}
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -93,7 +96,7 @@ export const RegisterScreen: React.FC = () => {
                   name="email"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <AppInput
-                      label="Email"
+                      label={t('auth.email')}
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -110,7 +113,7 @@ export const RegisterScreen: React.FC = () => {
                   name="password"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <AppInput
-                      label="Password"
+                      label={t('auth.password')}
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -127,7 +130,7 @@ export const RegisterScreen: React.FC = () => {
                   name="confirmPassword"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <AppInput
-                      label="Confirm Password"
+                      label={t('auth.confirmPassword')}
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -140,7 +143,7 @@ export const RegisterScreen: React.FC = () => {
                 />
 
                 <AppButton
-                  label="Sign Up"
+                  label={t('auth.signUp')}
                   onPress={handleSubmit(onSubmit)}
                   loading={isLoading}
                   style={styles.registerButton}
@@ -149,7 +152,7 @@ export const RegisterScreen: React.FC = () => {
 
               <View style={styles.loginContainer}>
                 <Text style={[styles.loginText, { color: colors.textSecondary }]}>
-                  Already have an account?{' '}
+                  {t('auth.alreadyHaveAccount')}{' '}
                 </Text>
                 <AppButton
                   label="Sign In"
