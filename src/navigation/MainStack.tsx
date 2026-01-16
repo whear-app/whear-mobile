@@ -14,6 +14,7 @@ import { CatalogScreen } from '../screens/catalog/CatalogScreen';
 import { UpgradeScreen } from '../screens/subscription/UpgradeScreen';
 import { CollectionsScreen } from '../screens/home/CollectionsScreen';
 import { SocialScreen } from '../screens/social/SocialScreen';
+import { ClothesStorageScreen } from '../screens/clothes/ClothesStorageScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
@@ -36,6 +37,7 @@ const MainStack: React.FC = () => {
       <Stack.Screen name={ROUTES.UPGRADE} component={UpgradeScreen} />
       <Stack.Screen name={ROUTES.COLLECTIONS} component={CollectionsScreen} />
       <Stack.Screen name={ROUTES.SOCIAL} component={SocialScreen} />
+      <Stack.Screen name={ROUTES.CLOTHES_STORAGE} component={ClothesStorageScreen} />
     </Stack.Navigator>
   );
 };
