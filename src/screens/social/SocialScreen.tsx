@@ -626,7 +626,7 @@ const SocialScreen: React.FC = () => {
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: spacing.xl, paddingTop: spacing.lg }]}>
           <View style={{ width: 46 }} />
-          <AppText variant="display" overlay style={styles.headerTitle}>
+          <AppText variant="display" style={[styles.headerTitle, { color: colors.textPrimary }]}>
             Social
           </AppText>
           <TouchableOpacity

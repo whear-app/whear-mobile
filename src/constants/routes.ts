@@ -36,6 +36,9 @@ export const ROUTES = {
 
   // Social
   SOCIAL: 'Social',
+
+  // Clothes Storage
+  CLOTHES_STORAGE: 'ClothesStorage',
 } as const;
 
 export const TAB_ROUTES = {
