@@ -22,7 +22,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 const Icon = MaterialCommunityIcons;
 
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppText, BottomNavigationBar, Avatar } from '../../components';
+import { AppText, Avatar } from '../../components';
 import { GradientBackground } from '../../components';
 import { MainStackParamList } from '../../navigation/types';
 import { ROUTES, TAB_ROUTES } from '../../constants/routes';
@@ -758,8 +758,6 @@ const SocialScreen: React.FC = () => {
           </View>
         </Animated.ScrollView>
 
-        {/* Bottom Navigation Bar */}
-        <BottomNavigationBar scrollY={scrollY} showOnScrollUp={true} />
 
         {/* Story Viewer Modal */}
         <Modal

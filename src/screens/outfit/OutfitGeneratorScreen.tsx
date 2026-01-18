@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import * as Location from 'expo-location';
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppButton, AppText, AppCard, TagChip, GradientBackground, StoryChip, Avatar, BottomNavigationBar } from '../../components';
+import { AppButton, AppText, AppCard, TagChip, GradientBackground, StoryChip, Avatar } from '../../components';
 import { ROUTES, TAB_ROUTES } from '../../constants/routes';
 import { MainStackParamList } from '../../navigation/types';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
@@ -231,8 +231,6 @@ export const OutfitGeneratorScreen: React.FC = () => {
           </View>
         </Animated.ScrollView>
 
-        {/* Bottom Navigation Bar */}
-        <BottomNavigationBar scrollY={scrollY} showOnScrollUp={true} />
       </SafeAreaView>
     </GradientBackground>
   );

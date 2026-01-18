@@ -20,7 +20,7 @@ import { Image } from 'expo-image';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppText, BottomNavigationBar, Avatar, TagChip, LoadingSpinner, EmptyState, GradientBackground } from '../../components';
+import { AppText, Avatar, TagChip, LoadingSpinner, EmptyState, GradientBackground } from '../../components';
 import { MainStackParamList } from '../../navigation/types';
 import { ROUTES, TAB_ROUTES } from '../../constants/routes';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
@@ -1498,7 +1498,6 @@ export const ClothesStorageScreen: React.FC = () => {
           </SafeAreaView>
         </Modal>
 
-        <BottomNavigationBar scrollY={scrollY} />
       </SafeAreaView>
     </GradientBackground>
   );

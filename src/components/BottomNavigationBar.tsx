@@ -86,15 +86,15 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
     // For Social and Collections routes, check exact match
     // These are direct routes in MainStack
     if (routeName === ROUTES.SOCIAL) {
-      return currentRoute === 'Social';
+      return currentRoute === 'Social' || currentRoute === ROUTES.SOCIAL;
     }
     
     if (routeName === ROUTES.COLLECTIONS) {
-      return currentRoute === 'Collections';
+      return currentRoute === 'Collections' || currentRoute === ROUTES.COLLECTIONS;
     }
     
     if (routeName === ROUTES.CLOTHES_STORAGE) {
-      return currentRoute === 'ClothesStorage';
+      return currentRoute === 'ClothesStorage' || currentRoute === ROUTES.CLOTHES_STORAGE;
     }
     
     return false;
@@ -131,8 +131,9 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           transform: [{ translateY }],
         },
       ]}
+      pointerEvents="box-none"
     >
-      <View style={styles.pillContainer}>
+      <View style={styles.pillContainer} pointerEvents="auto">
         {Platform.OS === 'ios' ? (
           <BlurView
             intensity={blur.strong}
@@ -140,7 +141,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
             style={[
               styles.pillBlur,
               {
-                borderRadius: borderRadius.full,
+                borderRadius: borderRadius.xl,
                 backgroundColor: isDark ? 'rgba(37,37,37,0.9)' : 'rgba(255,255,255,0.9)',
               },
             ]}
@@ -189,7 +190,7 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
             style={[
               styles.pillBlur,
               {
-                borderRadius: borderRadius.full,
+                borderRadius: borderRadius.xl,
                 backgroundColor: isDark ? 'rgba(37,37,37,0.95)' : 'rgba(255,255,255,0.95)',
                 borderWidth: 1,
                 borderColor: colors.glassBorder,
@@ -247,7 +248,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    zIndex: 1000,
+    zIndex: 10000, // Very high zIndex to ensure it's always on top
+    pointerEvents: 'box-none', // Allow touches to pass through to content below
     alignItems: 'center',
     paddingBottom: Platform.OS === 'ios' ? 20 : 16,
     paddingTop: spacingConstants.md,
@@ -255,6 +257,7 @@ const styles = StyleSheet.create({
   pillContainer: {
     width: SCREEN_WIDTH - 32, // Leave 16px padding on each side
     alignItems: 'center',
+    overflow: 'hidden',
   },
   pillBlur: {
     width: '100%',
@@ -264,6 +267,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
     elevation: 10,
+    overflow: 'hidden',
   },
   navContent: {
     flexDirection: 'row',

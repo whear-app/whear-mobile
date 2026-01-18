@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppText, LoadingSpinner, EmptyState, TagChip, GradientBackground, StoryChip, Avatar, BottomNavigationBar } from '../../components';
+import { AppText, LoadingSpinner, EmptyState, TagChip, GradientBackground, StoryChip, Avatar } from '../../components';
 import { ROUTES, TAB_ROUTES } from '../../constants/routes';
 import { MainTabParamList } from '../../navigation/types';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
@@ -250,8 +250,6 @@ export const ClosetScreen: React.FC = () => {
           />
         )}
 
-        {/* Bottom Navigation Bar */}
-        <BottomNavigationBar scrollY={scrollY} showOnScrollUp={true} />
       </SafeAreaView>
     </GradientBackground>
   );

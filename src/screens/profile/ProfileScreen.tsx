@@ -8,7 +8,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 const Icon = MaterialCommunityIcons;
 
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppText, Avatar, LoadingSpinner, TagChip, GradientBackground, AppCard, BottomNavigationBar } from '../../components';
+import { AppText, Avatar, LoadingSpinner, TagChip, GradientBackground, AppCard } from '../../components';
 import { ROUTES } from '../../constants/routes';
 import { MainStackParamList } from '../../navigation/types';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
@@ -263,8 +263,6 @@ export const ProfileScreen: React.FC = () => {
           )}
         </Animated.ScrollView>
 
-        {/* Bottom Navigation Bar */}
-        <BottomNavigationBar scrollY={scrollY} showOnScrollUp={true} />
       </SafeAreaView>
     </GradientBackground>
   );

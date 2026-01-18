@@ -10,7 +10,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 const Icon = MaterialCommunityIcons;
 
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppText, BottomNavigationBar } from '../../components';
+import { AppText } from '../../components';
 import { GradientBackground } from '../../components';
 import { MainStackParamList } from '../../navigation/types';
 import { ROUTES } from '../../constants/routes';
@@ -250,8 +250,6 @@ export const CollectionsScreen: React.FC = () => {
           />
         )}
 
-        {/* Bottom Navigation Bar */}
-        <BottomNavigationBar scrollY={scrollY} showOnScrollUp={true} />
       </SafeAreaView>
     </GradientBackground>
   );

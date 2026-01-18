@@ -17,16 +17,19 @@ import { WearTodayScreen } from '../screens/home/WearTodayScreen';
 import { SocialScreen } from '../screens/social/SocialScreen';
 import { ClothesStorageScreen } from '../screens/clothes/ClothesStorageScreen';
 import { OnboardingFlowScreen } from '../screens/auth/OnboardingFlowScreen';
+import { NavigationBarWrapper } from '../components/NavigationBarWrapper';
+import { View } from 'react-native';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
 const MainStack: React.FC = () => {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
+    <View style={{ flex: 1 }}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
       <Stack.Screen name={ROUTES.MAIN_TABS} component={MainTabs} />
       <Stack.Screen name={ROUTES.EDIT_PROFILE} component={EditProfileScreen} />
       <Stack.Screen name={ROUTES.SETTINGS} component={SettingsScreen} />
@@ -43,6 +46,8 @@ const MainStack: React.FC = () => {
       <Stack.Screen name={ROUTES.CLOTHES_STORAGE} component={ClothesStorageScreen} />
       <Stack.Screen name={ROUTES.ONBOARDING_FLOW as any} component={OnboardingFlowScreen} />
     </Stack.Navigator>
+    <NavigationBarWrapper />
+    </View>
   );
 };
 
