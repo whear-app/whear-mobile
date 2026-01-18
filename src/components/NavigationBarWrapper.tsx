@@ -48,6 +48,6 @@ export const NavigationBarWrapper: React.FC = () => {
     return null;
   }
 
-  return <BottomNavigationBar />;
+  return <BottomNavigationBar currentRouteName={currentRouteName} />;
 };
 
