@@ -20,7 +20,7 @@ import { Image } from 'expo-image';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppText, BottomNavigationBar, Avatar, TagChip, LoadingSpinner, EmptyState, GradientBackground } from '../../components';
+import { AppText, Avatar, TagChip, LoadingSpinner, EmptyState, GradientBackground } from '../../components';
 import { MainStackParamList } from '../../navigation/types';
 import { ROUTES, TAB_ROUTES } from '../../constants/routes';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
@@ -118,12 +118,12 @@ export const ClothesStorageScreen: React.FC = () => {
 
   const handlePickImage = async () => {
     Alert.alert(
-      'Select Image',
-      'Choose an option',
+      t('common.selectImage') || 'Select Image',
+      t('common.chooseOption') || 'Choose an option',
       [
-        { text: 'Camera', onPress: takePhoto },
-        { text: 'Gallery', onPress: pickImage },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.camera') || 'Camera', onPress: takePhoto },
+        { text: t('common.gallery') || 'Gallery', onPress: pickImage },
+        { text: t('common.cancel'), style: 'cancel' },
       ]
     );
   };
@@ -1498,7 +1498,6 @@ export const ClothesStorageScreen: React.FC = () => {
           </SafeAreaView>
         </Modal>
 
-        <BottomNavigationBar scrollY={scrollY} />
       </SafeAreaView>
     </GradientBackground>
   );

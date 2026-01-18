@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import * as Location from 'expo-location';
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppButton, AppText, AppCard, TagChip, GradientBackground, StoryChip, Avatar, BottomNavigationBar } from '../../components';
+import { AppButton, AppText, AppCard, TagChip, GradientBackground, StoryChip, Avatar } from '../../components';
 import { ROUTES, TAB_ROUTES } from '../../constants/routes';
 import { MainStackParamList } from '../../navigation/types';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
@@ -17,12 +17,14 @@ import { useSnackbar } from '../../hooks/useSnackbar';
 import { Occasion, WeatherContext } from '../../models';
 import { BlurView } from 'expo-blur';
 import { Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = BottomTabNavigationProp<MainTabParamList>;
 
 const occasions: Occasion[] = ['work', 'casual', 'date', 'party', 'sport'];
 
 export const OutfitGeneratorScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuthStore();
   const { items } = useClosetStore();
@@ -30,6 +32,7 @@ export const OutfitGeneratorScreen: React.FC = () => {
   const { checkGenerateLimit, incrementGenerateCount } = useEntitlementsStore();
   const { showSnackbar } = useSnackbar();
   const { colors, spacing, borderRadius, blur, isDark } = useAppTheme();
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const [occasion, setOccasion] = useState<Occasion>('casual');
   const [temperature, setTemperature] = useState<string>('22');
@@ -60,13 +63,13 @@ export const OutfitGeneratorScreen: React.FC = () => {
     try {
       const canGenerate = await checkGenerateLimit(user.id);
       if (!canGenerate) {
-        showSnackbar('Daily generate limit reached. Upgrade to Pro for more.', 'error');
+        showSnackbar(t('outfit.dailyLimitReached'), 'error');
         navigation.navigate(ROUTES.UPGRADE);
         return;
       }
 
       if (items.length < 3) {
-        showSnackbar('Add at least 3 items to your closet first', 'error');
+        showSnackbar(t('outfit.addItemsFirst'), 'error');
         return;
       }
 
@@ -104,7 +107,7 @@ export const OutfitGeneratorScreen: React.FC = () => {
           <View style={styles.header}>
             <View style={{ width: 46 }} />
             <AppText variant="display" style={{ fontWeight: '700', color: colors.textPrimary }}>
-              Today
+              {t('today.today')}
             </AppText>
             <TouchableOpacity
               onPress={() => {
@@ -135,14 +138,14 @@ export const OutfitGeneratorScreen: React.FC = () => {
               <View style={styles.heroOverlay}>
                 <View style={styles.heroContent}>
                   <AppText variant="h1" overlay style={{ marginBottom: spacing.sm }}>
-                    {todayOutfit.occasion.charAt(0).toUpperCase() + todayOutfit.occasion.slice(1)} Outfit
+                    {todayOutfit.occasion.charAt(0).toUpperCase() + todayOutfit.occasion.slice(1)} {t('outfit.outfitGenerator')}
                   </AppText>
                   <AppText variant="body" overlay style={{ opacity: 0.9 }}>
                     {todayOutfit.reason}
                   </AppText>
                   <View style={styles.heroActions}>
                     <AppButton
-                      label="Wear Today"
+                      label={t('outfit.wearToday')}
                       variant="glass"
                       onPress={() => {
                         const parent = navigation.getParent();
@@ -160,7 +163,7 @@ export const OutfitGeneratorScreen: React.FC = () => {
             <AppCard variant="floating" style={StyleSheet.flatten([styles.heroCard, { marginTop: spacing.xl }])}>
               <View style={[styles.heroPlaceholder, { backgroundColor: colors.glassSurface }]}>
                 <AppText variant="h2" color={colors.textSecondary}>
-                  Generate your first outfit
+                  {t('outfit.generateOutfit')}
                 </AppText>
               </View>
             </AppCard>
@@ -184,16 +187,16 @@ export const OutfitGeneratorScreen: React.FC = () => {
           {/* Generate Section */}
           <View style={[styles.generateSection, { marginTop: spacing.xl }]}>
             <AppText variant="h2" style={{ fontWeight: '700', marginBottom: spacing.lg }}>
-              Generate New Outfit
+              {t('outfit.generateOutfit')}
             </AppText>
 
             <AppCard variant="glass" style={styles.weatherCard}>
               <AppText variant="body" style={[styles.label, { marginBottom: spacing.md }]}>
-                Weather Context
+                {t('outfit.weather')}
               </AppText>
 
               <View style={styles.inputRow}>
-                <AppText variant="caption" color={colors.textSecondary}>Temperature</AppText>
+                <AppText variant="caption" color={colors.textSecondary}>{t('outfit.temperature')}</AppText>
                 <View style={[styles.tempInput, { backgroundColor: colors.glassSurface, borderColor: colors.glassBorder }]}>
                   <Text style={[styles.tempText, { color: colors.textPrimary }]}>
                     {temperature}°C
@@ -202,7 +205,7 @@ export const OutfitGeneratorScreen: React.FC = () => {
               </View>
 
               <View style={[styles.switchRow, { borderTopColor: colors.glassBorder, borderBottomColor: colors.glassBorder }]}>
-                <AppText variant="body">Is it raining?</AppText>
+                <AppText variant="body">{t('outfit.isRaining')}</AppText>
                 <Switch
                   value={isRaining}
                   onValueChange={setIsRaining}
@@ -213,13 +216,13 @@ export const OutfitGeneratorScreen: React.FC = () => {
 
               {locationLoaded && (
                 <View style={[styles.locationChip, { backgroundColor: colors.accentLight, marginTop: spacing.md }]}>
-                  <Text style={[styles.locationText, { color: colors.accent }]}>📍 Location loaded</Text>
+                  <Text style={[styles.locationText, { color: colors.accent }]}>📍 {t('outfit.locationLoaded')}</Text>
                 </View>
               )}
             </AppCard>
 
             <AppButton
-              label="Generate Outfits"
+              label={t('outfit.generateOutfit')}
               variant="primary"
               onPress={handleGenerate}
               loading={isLoading}
@@ -228,8 +231,6 @@ export const OutfitGeneratorScreen: React.FC = () => {
           </View>
         </Animated.ScrollView>
 
-        {/* Bottom Navigation Bar */}
-        <BottomNavigationBar scrollY={scrollY} showOnScrollUp={true} />
       </SafeAreaView>
     </GradientBackground>
   );

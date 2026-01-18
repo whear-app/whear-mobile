@@ -12,21 +12,27 @@ import { ROUTES } from '../../constants/routes';
 import { AuthStackParamList } from '../../navigation/types';
 import { spacing as spacingConstants } from '../../constants/theme';
 import { useAuthStore } from '../../features/authStore';
+import { useProfileStore } from '../../features/profileStore';
 import { useSnackbar } from '../../hooks/useSnackbar';
+import { useTranslation } from 'react-i18next';
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
+const createLoginSchema = (t: any) => z.object({
+  email: z.string().email(t('auth.invalidEmail')),
+  password: z.string().min(1, t('auth.passwordRequired')),
 });
 
-type FormData = z.infer<typeof loginSchema>;
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export const LoginScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
-  const { login, isLoading } = useAuthStore();
+  const { login, isLoading, user } = useAuthStore();
+  const { fetchProfile, profile } = useProfileStore();
   const { showSnackbar } = useSnackbar();
   const { colors, spacing } = useAppTheme();
+
+  const loginSchema = createLoginSchema(t);
+  type FormData = z.infer<typeof loginSchema>;
 
   const {
     control,
@@ -43,6 +49,9 @@ export const LoginScreen: React.FC = () => {
   const onSubmit = async (data: FormData) => {
     try {
       await login(data.email, data.password);
+      // After successful login, navigate to onboarding flow
+      // OnboardingFlowScreen will check if profile is complete and navigate accordingly
+      navigation.navigate(ROUTES.ONBOARDING_FLOW);
     } catch (error) {
       showSnackbar((error as Error).message, 'error');
     }
@@ -65,7 +74,7 @@ export const LoginScreen: React.FC = () => {
               <View style={styles.header}>
                 <Text style={[styles.logo, { color: colors.textPrimary }]}>Whear</Text>
                 <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                  Sign in to continue
+                  {t('auth.signInToContinue')}
                 </Text>
               </View>
 
@@ -76,7 +85,7 @@ export const LoginScreen: React.FC = () => {
                   name="email"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <AppInput
-                      label="Email"
+                      label={t('auth.email')}
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -93,7 +102,7 @@ export const LoginScreen: React.FC = () => {
                   name="password"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <AppInput
-                      label="Password"
+                      label={t('auth.password')}
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -107,7 +116,7 @@ export const LoginScreen: React.FC = () => {
 
                 <View style={styles.forgotContainer}>
                   <AppButton
-                    label="Forgot password?"
+                    label={t('auth.forgotPassword')}
                     variant="ghost"
                     onPress={() => navigation.navigate(ROUTES.FORGOT_PASSWORD)}
                     style={styles.forgotButton}
@@ -115,7 +124,7 @@ export const LoginScreen: React.FC = () => {
                 </View>
 
                 <AppButton
-                  label="Log In"
+                  label={t('auth.signIn')}
                   onPress={handleSubmit(onSubmit)}
                   loading={isLoading}
                   style={styles.loginButton}
@@ -125,10 +134,10 @@ export const LoginScreen: React.FC = () => {
               {/* Sign Up Link */}
               <View style={styles.signupContainer}>
                 <Text style={[styles.signupText, { color: colors.textSecondary }]}>
-                  Don't have an account?{' '}
+                  {t('auth.dontHaveAccount')}{' '}
                 </Text>
                 <AppButton
-                  label="Sign Up"
+                  label={t('auth.signUp')}
                   variant="ghost"
                   onPress={() => navigation.navigate(ROUTES.REGISTER)}
                   style={styles.signupLink}

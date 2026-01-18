@@ -13,27 +13,33 @@ import { AuthStackParamList } from '../../navigation/types';
 import { spacing as spacingConstants } from '../../constants/theme';
 import { authService } from '../../services/authService';
 import { useSnackbar } from '../../hooks/useSnackbar';
+import { useTranslation } from 'react-i18next';
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email address'),
+const createForgotPasswordSchema = (t: any) => z.object({
+  email: z.string().email(t('auth.invalidEmail')),
 });
 
-type FormData = z.infer<typeof forgotPasswordSchema>;
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export const ForgotPasswordScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { showSnackbar } = useSnackbar();
   const { colors, spacing } = useAppTheme();
   const [isLoading, setIsLoading] = React.useState(false);
   const [emailSent, setEmailSent] = React.useState(false);
 
+  const forgotPasswordSchema = createForgotPasswordSchema(t);
+  type FormData = z.infer<typeof forgotPasswordSchema>;
+
   const {
     control,
     handleSubmit,
     formState: { errors },
     watch,
-  } = useForm<FormData>();
+  } = useForm<FormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+  });
 
   const email = watch('email');
 
@@ -42,7 +48,7 @@ export const ForgotPasswordScreen: React.FC = () => {
     try {
       await authService.forgotPassword(data.email);
       setEmailSent(true);
-      showSnackbar('Reset code sent to your email', 'success');
+      showSnackbar(t('auth.resetCodeSent'), 'success');
     } catch (error) {
       showSnackbar((error as Error).message, 'error');
     } finally {
@@ -57,16 +63,16 @@ export const ForgotPasswordScreen: React.FC = () => {
           <View style={[styles.content, { padding: spacing.lg }]}>
             <AppCard variant="glass" style={styles.card}>
               <View style={styles.header}>
-                <Text style={[styles.title, { color: colors.textPrimary }]}>Check Your Email</Text>
+                <Text style={[styles.title, { color: colors.textPrimary }]}>{t('auth.checkYourEmail')}</Text>
                 <Text style={[styles.message, { color: colors.textSecondary }]}>
-                  We sent a password reset code to {email}
+                  {t('auth.resetCodeSentTo')} {email}
                 </Text>
                 <Text style={[styles.hint, { color: colors.textSecondary }]}>
-                  Enter code: 123456
+                  {t('auth.enterCode')}: 123456
                 </Text>
               </View>
               <AppButton
-                label="Continue to Reset"
+                label={t('auth.continueToReset')}
                 onPress={() =>
                   navigation.navigate(ROUTES.RESET_PASSWORD, {
                     email: email || '',
@@ -96,9 +102,9 @@ export const ForgotPasswordScreen: React.FC = () => {
           >
             <View style={styles.content}>
               <View style={styles.header}>
-                <Text style={[styles.title, { color: colors.textPrimary }]}>Forgot Password?</Text>
+                <Text style={[styles.title, { color: colors.textPrimary }]}>{t('auth.forgotPassword')}</Text>
                 <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                  Enter your email to receive a reset code
+                  {t('auth.enterEmailForReset')}
                 </Text>
               </View>
 
@@ -108,7 +114,7 @@ export const ForgotPasswordScreen: React.FC = () => {
                   name="email"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <AppInput
-                      label="Email"
+                      label={t('auth.email')}
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -120,14 +126,14 @@ export const ForgotPasswordScreen: React.FC = () => {
                 />
 
                 <AppButton
-                  label="Send Reset Code"
+                  label={t('auth.sendResetCode')}
                   onPress={handleSubmit(onSubmit)}
                   loading={isLoading}
                   style={styles.button}
                 />
 
                 <AppButton
-                  label="Back to Sign In"
+                  label={t('auth.backToSignIn')}
                   variant="ghost"
                   onPress={() => navigation.goBack()}
                   style={styles.linkButton}

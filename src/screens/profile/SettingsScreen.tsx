@@ -11,15 +11,19 @@ import { spacing as spacingConstants, borderRadius as borderRadiusConstants } fr
 import { useAuthStore } from '../../features/authStore';
 import { useProfileStore } from '../../features/profileStore';
 import { useThemeStore } from '../../features/themeStore';
+import { useLanguageStore } from '../../features/languageStore';
 import { useSnackbar } from '../../hooks/useSnackbar';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { t } = useTranslation();
   const { user, logout } = useAuthStore();
   const { deleteAccount } = useProfileStore();
   const { themeMode, setThemeMode } = useThemeStore();
+  const { language, setLanguage } = useLanguageStore();
   const { showSnackbar } = useSnackbar();
   const { colors, spacing, borderRadius } = useAppTheme();
   const [isDarkMode, setIsDarkMode] = React.useState(themeMode === 'dark');
@@ -33,18 +37,18 @@ export const SettingsScreen: React.FC = () => {
     if (!user) return;
 
     Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone.',
+      t('profile.deleteAccount'),
+      t('profile.deleteAccountConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await deleteAccount(user.id);
               await logout();
-              showSnackbar('Account deleted successfully', 'success');
+              showSnackbar(t('profile.accountDeleted'), 'success');
             } catch (error) {
               showSnackbar((error as Error).message, 'error');
             }
@@ -55,15 +59,19 @@ export const SettingsScreen: React.FC = () => {
   };
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('profile.logout'), t('profile.logoutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Logout',
+        text: t('profile.logout'),
         onPress: async () => {
           await logout();
         },
       },
     ]);
+  };
+
+  const handleLanguageChange = async (newLanguage: 'en' | 'vi') => {
+    await setLanguage(newLanguage);
   };
 
   const SettingItem: React.FC<{
@@ -102,7 +110,7 @@ export const SettingsScreen: React.FC = () => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Text style={[styles.backIcon, { color: colors.textPrimary }]}>←</Text>
           </TouchableOpacity>
-          <AppText variant="h1" style={{ fontWeight: '700' }}>Settings</AppText>
+          <AppText variant="h1" style={{ fontWeight: '700' }}>{t('profile.settings')}</AppText>
           <View style={styles.placeholder} />
         </View>
 
@@ -110,11 +118,11 @@ export const SettingsScreen: React.FC = () => {
           <View style={[styles.content, { padding: spacing.lg }]}>
             <AppCard variant="glass" style={[styles.section, { marginBottom: spacing.lg }]}>
               <AppText variant="body" style={[styles.sectionTitle, { marginBottom: spacing.md, fontWeight: '600' }]}>
-                Appearance
+                {t('profile.appearance')}
               </AppText>
               <SettingItem
                 icon="🌓"
-                title="Dark Mode"
+                title={t('profile.darkMode')}
                 right={
                   <Switch
                     value={isDarkMode}
@@ -124,27 +132,57 @@ export const SettingsScreen: React.FC = () => {
                   />
                 }
               />
+              <SettingItem
+                icon="🌐"
+                title={t('profile.language')}
+                right={
+                  <View style={styles.languageSelector}>
+                    <TouchableOpacity
+                      onPress={() => handleLanguageChange('en')}
+                      style={[
+                        styles.languageOption,
+                        language === 'en' && { backgroundColor: colors.accentLight, borderColor: colors.accent }
+                      ]}
+                    >
+                      <AppText variant="caption" style={{ fontWeight: language === 'en' ? '600' : '400' }}>
+                        {t('profile.english')}
+                      </AppText>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleLanguageChange('vi')}
+                      style={[
+                        styles.languageOption,
+                        language === 'vi' && { backgroundColor: colors.accentLight, borderColor: colors.accent }
+                      ]}
+                    >
+                      <AppText variant="caption" style={{ fontWeight: language === 'vi' ? '600' : '400' }}>
+                        {t('profile.vietnamese')}
+                      </AppText>
+                    </TouchableOpacity>
+                  </View>
+                }
+              />
             </AppCard>
 
             <AppCard variant="glass" style={[styles.section, { marginBottom: spacing.lg }]}>
               <AppText variant="body" style={[styles.sectionTitle, { marginBottom: spacing.md, fontWeight: '600' }]}>
-                Account
+                {t('profile.account')}
               </AppText>
-              <SettingItem icon="🔒" title="Privacy Policy" onPress={() => {}} />
-              <SettingItem icon="📄" title="Terms of Service" onPress={() => {}} />
-              <SettingItem icon="🗑️" title="Delete Account" onPress={handleDeleteAccount} destructive />
+              <SettingItem icon="🔒" title={t('profile.privacyPolicy')} onPress={() => {}} />
+              <SettingItem icon="📄" title={t('profile.termsOfService')} onPress={() => {}} />
+              <SettingItem icon="🗑️" title={t('profile.deleteAccount')} onPress={handleDeleteAccount} destructive />
             </AppCard>
 
             <AppCard variant="glass" style={[styles.section, { marginBottom: spacing.lg }]}>
               <AppText variant="body" style={[styles.sectionTitle, { marginBottom: spacing.md, fontWeight: '600' }]}>
-                About
+                {t('profile.about')}
               </AppText>
-              <SettingItem icon="ℹ️" title="App Version" right={<AppText variant="caption" color={colors.textSecondary}>1.0.0</AppText>} />
-              <SettingItem icon="⭐" title="Upgrade to Pro" onPress={() => navigation.navigate(ROUTES.UPGRADE)} />
+              <SettingItem icon="ℹ️" title={t('profile.appVersion')} right={<AppText variant="caption" color={colors.textSecondary}>1.0.0</AppText>} />
+              <SettingItem icon="⭐" title={t('profile.upgradeToPro')} onPress={() => navigation.navigate(ROUTES.UPGRADE)} />
             </AppCard>
 
             <AppButton
-              label="Logout"
+              label={t('profile.logout')}
               variant="glass"
               onPress={handleLogout}
               style={styles.logoutButton}
@@ -209,6 +247,17 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: spacingConstants.xl,
+  },
+  languageSelector: {
+    flexDirection: 'row',
+    gap: spacingConstants.sm,
+  },
+  languageOption: {
+    paddingHorizontal: spacingConstants.md,
+    paddingVertical: spacingConstants.xs,
+    borderRadius: borderRadiusConstants.md,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
 });
 

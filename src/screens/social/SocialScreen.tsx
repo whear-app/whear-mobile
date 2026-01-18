@@ -22,12 +22,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 const Icon = MaterialCommunityIcons;
 
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppText, BottomNavigationBar, Avatar } from '../../components';
+import { AppText, Avatar } from '../../components';
 import { GradientBackground } from '../../components';
 import { MainStackParamList } from '../../navigation/types';
 import { ROUTES, TAB_ROUTES } from '../../constants/routes';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
 import { useAuthStore } from '../../features/authStore';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
@@ -205,6 +206,7 @@ const mockPosts: Post[] = [
 ];
 
 const SocialScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { colors, spacing, borderRadius, blur, isDark } = useAppTheme();
   const { user } = useAuthStore();
@@ -458,7 +460,7 @@ const SocialScreen: React.FC = () => {
           )}
         </View>
         <AppText variant="caption" style={styles.storyName} numberOfLines={1}>
-          {item.isMyStory ? 'Your Story' : item.userName}
+          {item.isMyStory ? t('social.yourStory') : item.userName}
         </AppText>
       </TouchableOpacity>
     ),
@@ -495,7 +497,7 @@ const SocialScreen: React.FC = () => {
               style={styles.commentActionButton}
             >
               <AppText variant="caption" style={[styles.commentActionText, { color: colors.textSecondary }]}>
-                Like
+                {t('social.like')}
               </AppText>
             </TouchableOpacity>
             {depth === 0 && (
@@ -504,13 +506,13 @@ const SocialScreen: React.FC = () => {
                 style={styles.commentActionButton}
               >
                 <AppText variant="caption" style={[styles.commentActionText, { color: colors.textSecondary }]}>
-                  Reply
+                  {t('social.reply')}
                 </AppText>
               </TouchableOpacity>
             )}
             {comment.likes > 0 && (
               <AppText variant="caption" style={[styles.commentLikes, { color: colors.textSecondary }]}>
-                {comment.likes} {comment.likes === 1 ? 'like' : 'likes'}
+                {comment.likes} {comment.likes === 1 ? t('social.like') : t('social.likes')}
               </AppText>
             )}
           </View>
@@ -596,7 +598,7 @@ const SocialScreen: React.FC = () => {
         {/* Post Caption */}
         <View style={styles.postCaption}>
           <AppText variant="body" style={[styles.postLikes, { color: colors.textPrimary }]}>
-            {item.likes} {item.likes === 1 ? 'like' : 'likes'}
+            {item.likes} {item.likes === 1 ? t('social.like') : t('social.likes')}
           </AppText>
           <View style={styles.postCaptionText}>
             <AppText variant="body" style={[styles.postCaptionUser, { color: colors.textPrimary }]}>
@@ -610,7 +612,7 @@ const SocialScreen: React.FC = () => {
           {item.comments.length > 0 && (
             <TouchableOpacity onPress={() => openComments(item)}>
               <AppText variant="caption" style={[styles.viewComments, { color: colors.textSecondary }]}>
-                View all {item.comments.length} {item.comments.length === 1 ? 'comment' : 'comments'}
+                {t('social.viewComments')} {item.comments.length} {item.comments.length === 1 ? t('social.comment') : t('social.comments')}
               </AppText>
             </TouchableOpacity>
           )}
@@ -627,7 +629,7 @@ const SocialScreen: React.FC = () => {
         <View style={[styles.header, { paddingHorizontal: spacing.xl, paddingTop: spacing.lg }]}>
           <View style={{ width: 46 }} />
           <AppText variant="display" style={[styles.headerTitle, { color: colors.textPrimary }]}>
-            Social
+            {t('social.social')}
           </AppText>
           <TouchableOpacity
             onPress={() => {
@@ -691,20 +693,20 @@ const SocialScreen: React.FC = () => {
                   >
                     <Icon name="image-outline" size={24} color={colors.textPrimary} />
                     <AppText variant="body" style={styles.createPostText}>
-                      What's on your mind?
+                      {t('social.whatsOnYourMind')}
                     </AppText>
                   </TouchableOpacity>
                   <View style={styles.createPostActions}>
                     <TouchableOpacity style={styles.createPostAction}>
                       <Icon name="image-multiple-outline" size={20} color={colors.accent} />
                       <AppText variant="caption" style={styles.createPostActionText}>
-                        Photo
+                        {t('social.photo')}
                       </AppText>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.createPostAction}>
                       <Icon name="emoticon-happy-outline" size={20} color={colors.accent} />
                       <AppText variant="caption" style={styles.createPostActionText}>
-                        Feeling
+                        {t('social.feeling')}
                       </AppText>
                     </TouchableOpacity>
                   </View>
@@ -721,20 +723,20 @@ const SocialScreen: React.FC = () => {
                   >
                     <Icon name="image-outline" size={24} color={colors.textPrimary} />
                     <AppText variant="body" style={styles.createPostText}>
-                      What's on your mind?
+                      {t('social.whatsOnYourMind')}
                     </AppText>
                   </TouchableOpacity>
                   <View style={styles.createPostActions}>
                     <TouchableOpacity style={styles.createPostAction}>
                       <Icon name="image-multiple-outline" size={20} color={colors.accent} />
                       <AppText variant="caption" style={styles.createPostActionText}>
-                        Photo
+                        {t('social.photo')}
                       </AppText>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.createPostAction}>
                       <Icon name="emoticon-happy-outline" size={20} color={colors.accent} />
                       <AppText variant="caption" style={styles.createPostActionText}>
-                        Feeling
+                        {t('social.feeling')}
                       </AppText>
                     </TouchableOpacity>
                   </View>
@@ -756,8 +758,6 @@ const SocialScreen: React.FC = () => {
           </View>
         </Animated.ScrollView>
 
-        {/* Bottom Navigation Bar */}
-        <BottomNavigationBar scrollY={scrollY} showOnScrollUp={true} />
 
         {/* Story Viewer Modal */}
         <Modal
@@ -817,7 +817,7 @@ const SocialScreen: React.FC = () => {
                       {stories[currentStoryIndex].userName}
                     </AppText>
                     <AppText overlay muted variant="caption" style={styles.storyHeaderTime}>
-                      {stories[currentStoryIndex].isMyStory ? 'Your story' : '2h ago'}
+                      {stories[currentStoryIndex].isMyStory ? t('social.yourStory') : '2h ago'}
                     </AppText>
                   </View>
                   <TouchableOpacity onPress={closeStoryViewer}>
@@ -847,10 +847,10 @@ const SocialScreen: React.FC = () => {
             {currentStoryIndex === stories.length - 1 && storyProgress >= 0.98 && (
               <View style={styles.storyEndContainer}>
                 <AppText overlay variant="h1" style={styles.storyEndText}>
-                  That's all for now!
+                  {t('social.thatsAllForNow')}
                 </AppText>
                 <AppText overlay muted variant="body" style={styles.storyEndSubtext}>
-                  Check back later for more stories
+                  {t('social.checkBackLater')}
                 </AppText>
               </View>
             )}
@@ -955,7 +955,7 @@ const SocialScreen: React.FC = () => {
                   {/* Post Caption - Expanded */}
                   <View style={styles.postDetailCaption}>
                     <AppText variant="body" style={[styles.postDetailLikes, { color: colors.textPrimary }]}>
-                      {selectedPostDetail.likes} {selectedPostDetail.likes === 1 ? 'like' : 'likes'}
+                      {selectedPostDetail.likes} {selectedPostDetail.likes === 1 ? t('social.like') : t('social.likes')}
                     </AppText>
                     <View style={styles.postDetailCaptionText}>
                       <AppText variant="body" style={[styles.postDetailCaptionUser, { color: colors.textPrimary }]}>
@@ -973,8 +973,8 @@ const SocialScreen: React.FC = () => {
                         }}
                       >
                         <AppText variant="caption" style={[styles.postDetailViewComments, { color: colors.textSecondary }]}>
-                          View all {selectedPostDetail.comments.length}{' '}
-                          {selectedPostDetail.comments.length === 1 ? 'comment' : 'comments'}
+                          {t('social.viewComments')} {selectedPostDetail.comments.length}{' '}
+                          {selectedPostDetail.comments.length === 1 ? t('social.comment') : t('social.comments')}
                         </AppText>
                       </TouchableOpacity>
                     )}
@@ -1011,7 +1011,7 @@ const SocialScreen: React.FC = () => {
               <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
                 <View style={[styles.modalHeader, { paddingTop: spacingConstants.lg, paddingHorizontal: spacingConstants.lg }]}>
                   <AppText variant="h1" style={styles.modalTitle}>
-                    Comments
+                    {t('social.comments')}
                   </AppText>
                   <TouchableOpacity
                     onPress={() => {
@@ -1049,7 +1049,7 @@ const SocialScreen: React.FC = () => {
                       variant="caption"
                       style={[styles.replyingToText, { color: colors.textSecondary }]}
                     >
-                      Replying to {replyingTo.userName}
+                      {t('social.replyingTo')} {replyingTo.userName}
                     </AppText>
                     <TouchableOpacity onPress={() => setReplyingTo(null)}>
                       <Icon name="close" size={18} color={colors.textSecondary} />
@@ -1076,7 +1076,7 @@ const SocialScreen: React.FC = () => {
                         backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                       },
                     ]}
-                    placeholder="Add a comment..."
+                    placeholder={t('social.addComment')}
                     placeholderTextColor={colors.textSecondary}
                     value={newComment}
                     onChangeText={setNewComment}
