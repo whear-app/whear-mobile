@@ -15,6 +15,7 @@ import { SwipeableCard } from '../../components/SwipeableCard';
 import { MainStackParamList } from '../../navigation/types';
 import { ROUTES } from '../../constants/routes';
 import { useTodayCollectionStore } from '../../stores/todayCollectionStore';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
@@ -172,6 +173,7 @@ const mockOutfits: OutfitSuggestion[] = [
 ];
 
 const WearTodayScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { colors, spacing, borderRadius, blur } = useAppTheme();
   const { addAccepted, addRejected, removeAccepted, removeRejected } = useTodayCollectionStore();
@@ -486,7 +488,7 @@ const WearTodayScreen: React.FC = () => {
           <View style={styles.neonZoneContent}>
             <Icon name="heart" size={56} color="#00FF88" />
             <AppText overlay variant="h1" style={styles.neonZoneText}>
-              LIKE
+              {t('today.like')}
             </AppText>
           </View>
         </LinearGradient>
@@ -512,7 +514,7 @@ const WearTodayScreen: React.FC = () => {
           <View style={styles.neonZoneContent}>
             <Icon name="close-circle" size={56} color="#FF3366" />
             <AppText overlay variant="h1" style={styles.neonZoneText}>
-              PASS
+              {t('today.pass')}
             </AppText>
           </View>
         </LinearGradient>
@@ -522,7 +524,7 @@ const WearTodayScreen: React.FC = () => {
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: spacing.xl }]}>
           <AppText variant="display" overlay style={styles.headerTitle}>
-            Today
+            {t('today.today')}
           </AppText>
 
           <View style={styles.headerRight}>
@@ -530,13 +532,13 @@ const WearTodayScreen: React.FC = () => {
               {Platform.OS === 'ios' ? (
                 <BlurView intensity={blur.medium} tint="light" style={styles.pillInner}>
                   <AppText overlay variant="caption" style={styles.pillText}>
-                    Hot 🔥
+                    {t('today.hot')} 🔥
                   </AppText>
                 </BlurView>
               ) : (
                 <View style={[styles.pillInner, styles.pillAndroid]}>
                   <AppText overlay variant="caption" style={styles.pillText}>
-                    Hot 🔥
+                    {t('today.hot')} 🔥
                   </AppText>
                 </View>
               )}
@@ -550,13 +552,13 @@ const WearTodayScreen: React.FC = () => {
               {Platform.OS === 'ios' ? (
                 <BlurView intensity={blur.medium} tint="light" style={[styles.pillInner, styles.pillNext]}>
                   <AppText overlay variant="body" style={styles.pillNextText}>
-                    Next →
+                    {t('today.next')} →
                   </AppText>
                 </BlurView>
               ) : (
                 <View style={[styles.pillInner, styles.pillAndroid, styles.pillNext]}>
                   <AppText overlay variant="body" style={styles.pillNextText}>
-                    Next →
+                    {t('today.next')} →
                   </AppText>
                 </View>
               )}
@@ -615,10 +617,10 @@ const WearTodayScreen: React.FC = () => {
         ) : (
           <View style={[styles.cardZone, styles.emptyState]}>
             <AppText overlay variant="h1" style={styles.emptyTitle}>
-              All Done! 🎉
+              {t('today.allDone')} 🎉
             </AppText>
             <AppText overlay muted variant="body" style={styles.emptySubtitle}>
-              You've reviewed all outfits for today
+              {t('today.reviewedAllOutfits')}
             </AppText>
             <View style={styles.emptyActions}>
               <TouchableOpacity
@@ -629,13 +631,13 @@ const WearTodayScreen: React.FC = () => {
                 {Platform.OS === 'ios' ? (
                   <BlurView intensity={blur.medium} tint="light" style={[styles.pillInner, styles.pillNext]}>
                     <AppText overlay variant="body" style={styles.pillNextText}>
-                      View Collections →
+                      {t('today.viewCollections')} →
                     </AppText>
                   </BlurView>
                 ) : (
                   <View style={[styles.pillInner, styles.pillAndroid, styles.pillNext]}>
                     <AppText overlay variant="body" style={styles.pillNextText}>
-                      View Collections →
+                      {t('today.viewCollections')} →
                     </AppText>
                   </View>
                 )}
@@ -649,13 +651,13 @@ const WearTodayScreen: React.FC = () => {
                 {Platform.OS === 'ios' ? (
                   <BlurView intensity={blur.medium} tint="light" style={[styles.pillInner, styles.pillNext]}>
                     <AppText overlay variant="body" style={styles.pillNextText}>
-                      Reset List ↻
+                      {t('today.resetList')} ↻
                     </AppText>
                   </BlurView>
                 ) : (
                   <View style={[styles.pillInner, styles.pillAndroid, styles.pillNext]}>
                     <AppText overlay variant="body" style={styles.pillNextText}>
-                      Reset List ↻
+                      {t('today.resetList')} ↻
                     </AppText>
                   </View>
                 )}

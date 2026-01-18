@@ -11,10 +11,12 @@ import { useAuthStore } from '../../features/authStore';
 import { useEntitlementsStore } from '../../features/entitlementsStore';
 import { useSnackbar } from '../../hooks/useSnackbar';
 import { FREE_PLAN_LIMITS, PRO_PLAN_LIMITS } from '../../constants/limits';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
 export const UpgradeScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuthStore();
   const { entitlements, upgradeToPro, isLoading, fetchEntitlements } = useEntitlementsStore();
@@ -32,7 +34,7 @@ export const UpgradeScreen: React.FC = () => {
 
     try {
       await upgradeToPro(user.id);
-      showSnackbar('Upgraded to Pro successfully!', 'success');
+      showSnackbar(t('subscription.upgradedSuccess'), 'success');
       navigation.goBack();
     } catch (error) {
       showSnackbar((error as Error).message, 'error');
@@ -53,11 +55,11 @@ export const UpgradeScreen: React.FC = () => {
     <GradientBackground>
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.lg }]}>
-          <AppText variant="h1" style={{ fontWeight: '700' }}>Upgrade to Pro</AppText>
+          <AppText variant="h1" style={{ fontWeight: '700' }}>{t('profile.upgradeToPro')}</AppText>
           {isPro && (
             <View style={[styles.proBadge, { backgroundColor: colors.accentLight, marginTop: spacing.sm }]}>
               <AppText variant="caption" color={colors.accent} style={{ fontWeight: '600' }}>
-                ✓ You're already on Pro!
+                ✓ {t('subscription.alreadyPro')}
               </AppText>
             </View>
           )}
@@ -70,7 +72,7 @@ export const UpgradeScreen: React.FC = () => {
           <View style={styles.plans}>
             <AppCard variant="glass" style={[styles.planCard, { marginBottom: spacing.lg }]}>
               <AppText variant="h2" style={{ fontWeight: '700', marginBottom: spacing.sm }}>
-                Free Plan
+                {t('subscription.freePlan')}
               </AppText>
               <AppText
                 variant="display"
@@ -80,10 +82,10 @@ export const UpgradeScreen: React.FC = () => {
               </AppText>
               <View style={styles.features}>
                 <AppText variant="body" color={colors.textSecondary} style={styles.feature}>
-                  • Up to {FREE_PLAN_LIMITS.maxClosetItems} closet items
+                  • {t('subscription.upTo')} {FREE_PLAN_LIMITS.maxClosetItems} {t('subscription.closetItems')}
                 </AppText>
                 <AppText variant="body" color={colors.textSecondary} style={styles.feature}>
-                  • {FREE_PLAN_LIMITS.maxGeneratesPerDay} outfit generates per day
+                  • {FREE_PLAN_LIMITS.maxGeneratesPerDay} {t('subscription.outfitGeneratesPerDay')}
                 </AppText>
               </View>
             </AppCard>
@@ -100,7 +102,7 @@ export const UpgradeScreen: React.FC = () => {
               ]}
             >
               <AppText variant="h2" style={{ fontWeight: '700', marginBottom: spacing.sm }}>
-                Pro Plan
+                {t('subscription.proPlan')}
               </AppText>
               <AppText
                 variant="display"
@@ -110,21 +112,21 @@ export const UpgradeScreen: React.FC = () => {
               </AppText>
               <View style={styles.features}>
                 <AppText variant="body" color={colors.textSecondary} style={styles.feature}>
-                  • Up to {PRO_PLAN_LIMITS.maxClosetItems} closet items
+                  • {t('subscription.upTo')} {PRO_PLAN_LIMITS.maxClosetItems} {t('subscription.closetItems')}
                 </AppText>
                 <AppText variant="body" color={colors.textSecondary} style={styles.feature}>
-                  • {PRO_PLAN_LIMITS.maxGeneratesPerDay} outfit generates per day
+                  • {PRO_PLAN_LIMITS.maxGeneratesPerDay} {t('subscription.outfitGeneratesPerDay')}
                 </AppText>
                 <AppText variant="body" color={colors.textSecondary} style={styles.feature}>
-                  • Priority support
+                  • {t('subscription.prioritySupport')}
                 </AppText>
                 <AppText variant="body" color={colors.textSecondary} style={styles.feature}>
-                  • Advanced AI features
+                  • {t('subscription.advancedAI')}
                 </AppText>
               </View>
               {!isPro && (
                 <AppButton
-                  label="Upgrade Now"
+                  label={t('subscription.upgradeNow')}
                   onPress={handleUpgrade}
                   loading={isLoading}
                   style={styles.upgradeButton}
@@ -134,7 +136,7 @@ export const UpgradeScreen: React.FC = () => {
           </View>
 
           <AppText variant="caption" color={colors.textSecondary} style={styles.disclaimer}>
-            * This is a demo. No actual payment will be processed.
+            {t('subscription.demoNotice')}
           </AppText>
         </ScrollView>
       </SafeAreaView>

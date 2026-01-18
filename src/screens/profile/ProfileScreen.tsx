@@ -8,7 +8,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 const Icon = MaterialCommunityIcons;
 
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppText, Avatar, LoadingSpinner, TagChip, GradientBackground, AppCard, BottomNavigationBar } from '../../components';
+import { AppText, Avatar, LoadingSpinner, TagChip, GradientBackground, AppCard } from '../../components';
 import { ROUTES } from '../../constants/routes';
 import { MainStackParamList } from '../../navigation/types';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
@@ -16,10 +16,12 @@ import { useAuthStore } from '../../features/authStore';
 import { useClosetStore } from '../../features/closetStore';
 import { useProfileStore } from '../../features/profileStore';
 import { useThemeStore } from '../../features/themeStore';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 
 export const ProfileScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuthStore();
   const { items } = useClosetStore();
@@ -62,7 +64,7 @@ export const ProfileScreen: React.FC = () => {
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.lg }]}>
           <View style={{ width: 46 }} />
-          <AppText variant="display" style={{ fontWeight: '700', color: colors.textPrimary }}>{user?.name || 'Profile'}</AppText>
+          <AppText variant="display" style={{ fontWeight: '700', color: colors.textPrimary }}>{user?.name || t('profile.profile')}</AppText>
           <TouchableOpacity
             onPress={() => navigation.navigate(ROUTES.SETTINGS)}
             style={[styles.headerButton, { borderColor: colors.glassBorder, borderRadius: borderRadius.full }]}
@@ -93,7 +95,7 @@ export const ProfileScreen: React.FC = () => {
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
                 <AppText variant="h1" style={{ fontWeight: '700' }}>{itemCount}</AppText>
-                <AppText variant="caption" color={colors.textSecondary}>items</AppText>
+                <AppText variant="caption" color={colors.textSecondary}>{t('profile.items')}</AppText>
               </View>
             </View>
           </View>
@@ -105,10 +107,10 @@ export const ProfileScreen: React.FC = () => {
                 <Icon name={isDark ? 'weather-night' : 'weather-sunny'} size={24} color={colors.accent} />
                 <View style={styles.themeCardText}>
                   <AppText variant="body" style={{ fontWeight: '700', marginBottom: 2 }}>
-                    {isDark ? 'Dark Mode' : 'Light Mode'}
+                    {isDark ? t('profile.darkMode') : t('profile.lightMode')}
                   </AppText>
                   <AppText variant="caption" color={colors.textSecondary}>
-                    {themeMode === 'auto' ? 'Auto (System)' : themeMode === 'dark' ? 'Dark' : 'Light'}
+                    {themeMode === 'auto' ? 'Auto (System)' : themeMode === 'dark' ? t('profile.darkMode') : t('profile.lightMode')}
                   </AppText>
                 </View>
               </View>
@@ -185,7 +187,7 @@ export const ProfileScreen: React.FC = () => {
             )}
           </AppCard>
 
-          {/* Action Button */}
+          {/* Action Buttons */}
           <View style={[styles.actions, { paddingHorizontal: spacing.lg, marginBottom: spacing.lg }]}>
             <TouchableOpacity
               style={[
@@ -194,12 +196,33 @@ export const ProfileScreen: React.FC = () => {
                   borderColor: colors.glassBorder,
                   backgroundColor: colors.glassSurface,
                   borderRadius: borderRadius.md,
+                  marginBottom: spacing.md,
                 },
               ]}
               onPress={() => navigation.navigate(ROUTES.EDIT_PROFILE)}
               activeOpacity={0.8}
             >
-              <AppText variant="body" style={{ fontWeight: '600' }}>Edit Profile</AppText>
+              <AppText variant="body" style={{ fontWeight: '600' }}>{t('profile.editProfile')}</AppText>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.editButton,
+                {
+                  borderColor: colors.accent,
+                  backgroundColor: colors.accentLight,
+                  borderRadius: borderRadius.md,
+                },
+              ]}
+              onPress={() => {
+                // Navigate to onboarding flow (now available in MainStack)
+                navigation.navigate(ROUTES.ONBOARDING_FLOW);
+              }}
+              activeOpacity={0.8}
+            >
+              <AppText variant="body" style={{ fontWeight: '600', color: colors.accent }}>
+                {t('onboarding.completeOnboarding')}
+              </AppText>
             </TouchableOpacity>
           </View>
 
@@ -207,7 +230,7 @@ export const ProfileScreen: React.FC = () => {
           {itemCount > 0 && (
             <View style={[styles.closetPreview, { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl }]}>
               <AppText variant="h2" style={{ fontWeight: '700', marginBottom: spacing.lg }}>
-                Your Closet
+                {t('closet.closet')}
               </AppText>
               <View style={styles.closetGrid}>
                 {userItems.slice(0, 9).map((item) => (
@@ -240,8 +263,6 @@ export const ProfileScreen: React.FC = () => {
           )}
         </Animated.ScrollView>
 
-        {/* Bottom Navigation Bar */}
-        <BottomNavigationBar scrollY={scrollY} showOnScrollUp={true} />
       </SafeAreaView>
     </GradientBackground>
   );

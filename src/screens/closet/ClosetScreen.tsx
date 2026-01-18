@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppText, LoadingSpinner, EmptyState, TagChip, GradientBackground, StoryChip, Avatar, BottomNavigationBar } from '../../components';
+import { AppText, LoadingSpinner, EmptyState, TagChip, GradientBackground, StoryChip, Avatar } from '../../components';
 import { ROUTES, TAB_ROUTES } from '../../constants/routes';
 import { MainTabParamList } from '../../navigation/types';
 import { spacing as spacingConstants, borderRadius as borderRadiusConstants } from '../../constants/theme';
@@ -13,12 +13,14 @@ import { useClosetStore } from '../../features/closetStore';
 import { ClosetItem, ItemCategory } from '../../models';
 import { BlurView } from 'expo-blur';
 import { Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = BottomTabNavigationProp<MainTabParamList>;
 
 const categories: ItemCategory[] = ['top', 'bottom', 'dress', 'outerwear', 'shoes', 'accessory', 'bag', 'other'];
 
 export const ClosetScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuthStore();
   const { items, isLoading, viewMode, filters, fetchItems, setViewMode, setFilters } = useClosetStore();
@@ -142,7 +144,7 @@ export const ClosetScreen: React.FC = () => {
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.lg }]}>
           <View style={{ width: 46 }} />
-          <AppText variant="display" style={{ fontWeight: '700', color: colors.textPrimary }}>My Closet</AppText>
+          <AppText variant="display" style={{ fontWeight: '700', color: colors.textPrimary }}>{t('closet.closet')}</AppText>
           <View style={styles.headerActions}>
             <TouchableOpacity
               onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
@@ -229,7 +231,7 @@ export const ClosetScreen: React.FC = () => {
         {filteredItems.length === 0 ? (
           <EmptyState
             icon="package-variant"
-            title="No items found"
+            title={t('closet.noItems')}
             message="Add items to your closet to get started"
           />
         ) : (
@@ -248,8 +250,6 @@ export const ClosetScreen: React.FC = () => {
           />
         )}
 
-        {/* Bottom Navigation Bar */}
-        <BottomNavigationBar scrollY={scrollY} showOnScrollUp={true} />
       </SafeAreaView>
     </GradientBackground>
   );

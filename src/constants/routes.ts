@@ -1,6 +1,7 @@
 export const ROUTES = {
   // Auth
   ONBOARDING: 'Onboarding',
+  ONBOARDING_FLOW: 'OnboardingFlow',
   REGISTER: 'Register',
   LOGIN: 'Login',
   VERIFY_ACCOUNT: 'VerifyAccount',

@@ -10,12 +10,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 const Icon = MaterialCommunityIcons;
 
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppText, BottomNavigationBar } from '../../components';
+import { AppText } from '../../components';
 import { GradientBackground } from '../../components';
 import { MainStackParamList } from '../../navigation/types';
 import { ROUTES } from '../../constants/routes';
 import { useTodayCollectionStore } from '../../stores/todayCollectionStore';
 import { OutfitSuggestion } from './WearTodayScreen';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
@@ -23,6 +24,7 @@ type NavigationProp = NativeStackNavigationProp<MainStackParamList>;
 type TabType = 'accepted' | 'rejected';
 
 export const CollectionsScreen: React.FC = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { colors, spacing, borderRadius, blur, isDark } = useAppTheme();
   const { accepted, rejected } = useTodayCollectionStore();
@@ -106,7 +108,7 @@ export const CollectionsScreen: React.FC = () => {
             )}
           </TouchableOpacity>
           <AppText variant="display" style={[styles.headerTitle, { color: colors.textPrimary }]}>
-            Collections
+            {t('collections.collections')}
           </AppText>
           <TouchableOpacity
             onPress={() => navigation.navigate(ROUTES.SOCIAL)}
@@ -152,7 +154,7 @@ export const CollectionsScreen: React.FC = () => {
                     { color: activeTab === 'accepted' ? colors.accent : colors.textPrimary }
                   ]}
                 >
-                  Liked ({accepted.length})
+                  {t('collections.liked')} ({accepted.length})
                 </AppText>
               </BlurView>
             ) : (
@@ -164,7 +166,7 @@ export const CollectionsScreen: React.FC = () => {
                     { color: activeTab === 'accepted' ? colors.accent : colors.textPrimary }
                   ]}
                 >
-                  Liked ({accepted.length})
+                  {t('collections.liked')} ({accepted.length})
                 </AppText>
               </View>
             )}
@@ -196,7 +198,7 @@ export const CollectionsScreen: React.FC = () => {
                     { color: activeTab === 'rejected' ? colors.error : colors.textPrimary }
                   ]}
                 >
-                  Not Liked ({rejected.length})
+                  {t('collections.rejected')} ({rejected.length})
                 </AppText>
               </BlurView>
             ) : (
@@ -208,7 +210,7 @@ export const CollectionsScreen: React.FC = () => {
                     { color: activeTab === 'rejected' ? colors.error : colors.textPrimary }
                   ]}
                 >
-                  Not Liked ({rejected.length})
+                  {t('collections.rejected')} ({rejected.length})
                 </AppText>
               </View>
             )}
@@ -224,7 +226,7 @@ export const CollectionsScreen: React.FC = () => {
               color={colors.textSecondary}
             />
             <AppText variant="h1" style={[styles.emptyTitle, { marginTop: spacing.lg, color: colors.textPrimary }]}>
-              No {activeTab === 'accepted' ? 'Liked' : 'Rejected'} Outfits
+              {activeTab === 'accepted' ? t('collections.noLikedOutfits') : t('collections.noRejectedOutfits')}
             </AppText>
             <AppText variant="body" color={colors.textSecondary} style={styles.emptySubtitle}>
               {activeTab === 'accepted'
@@ -248,8 +250,6 @@ export const CollectionsScreen: React.FC = () => {
           />
         )}
 
-        {/* Bottom Navigation Bar */}
-        <BottomNavigationBar scrollY={scrollY} showOnScrollUp={true} />
       </SafeAreaView>
     </GradientBackground>
   );
