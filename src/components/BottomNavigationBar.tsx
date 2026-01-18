@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated, Dimensions, Platform } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 const Icon = MaterialCommunityIcons;
@@ -15,6 +15,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface BottomNavigationBarProps {
   scrollY?: Animated.Value;
   showOnScrollUp?: boolean;
+  currentRouteName?: string | null;
 }
 
 interface NavItem {
@@ -34,10 +35,10 @@ const getNavItems = (t: any): NavItem[] => [
 export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   scrollY,
   showOnScrollUp = true,
+  currentRouteName,
 }) => {
   const { t } = useTranslation();
   const navigation = useNavigation();
-  const route = useRoute();
   const { colors, borderRadius, blur, isDark } = useAppTheme();
   const translateY = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
@@ -75,7 +76,8 @@ export const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   }, [scrollY, showOnScrollUp, translateY]);
 
   const isActive = (routeName: string) => {
-    const currentRoute = route.name;
+    // Use currentRouteName prop passed from NavigationBarWrapper
+    const currentRoute = currentRouteName;
     
     if (routeName === 'MainTabs') {
       // Only active if we're specifically on HomeTab
