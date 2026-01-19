@@ -3,6 +3,13 @@ import { User, AuthTokens, APIResponse } from '../models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { mockUsers } from '../data/mockData';
 
+export interface GoogleUserProfile {
+  id: string;
+  email: string;
+  name: string;
+  accessToken: string;
+}
+
 class AuthService {
   async register(email: string, password: string, name: string): Promise<APIResponse<User>> {
     // Simulate API call
@@ -52,6 +59,39 @@ class AuthService {
     await AsyncStorage.setItem('userId', user.id);
 
     return { data: user, message: 'Login successful' };
+  }
+
+  async loginWithGoogle(googleUser: GoogleUserProfile): Promise<APIResponse<User>> {
+    // Simulate API call delay
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Try to find existing user by Google id or email
+    let user =
+      mockUsers.find((u) => u.id === googleUser.id) ||
+      mockUsers.find((u) => u.email === googleUser.email);
+
+    // If not found, create a new user entry
+    if (!user) {
+      user = {
+        id: googleUser.id || `google-${Date.now()}`,
+        email: googleUser.email,
+        name: googleUser.name || googleUser.email,
+        createdAt: new Date().toISOString(),
+      };
+      mockUsers.push(user);
+    }
+
+    const tokens: AuthTokens = {
+      accessToken: googleUser.accessToken,
+      // For demo purposes we generate a simple refresh token
+      refreshToken: `google-refresh-${Date.now()}`,
+    };
+
+    await AsyncStorage.setItem('accessToken', tokens.accessToken);
+    await AsyncStorage.setItem('refreshToken', tokens.refreshToken);
+    await AsyncStorage.setItem('userId', user.id);
+
+    return { data: user, message: 'Login with Google successful' };
   }
 
   async verifyAccount(email: string, code: string): Promise<APIResponse<{ verified: boolean }>> {

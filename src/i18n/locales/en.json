@@ -47,7 +47,8 @@
     "continueToReset": "Continue to Reset",
     "enterEmailForReset": "Enter your email to receive a reset code",
     "sendResetCode": "Send Reset Code",
-    "backToSignIn": "Back to Sign In"
+    "backToSignIn": "Back to Sign In",
+    "signInWithGoogle": "Continue with Google"
   },
   "onboarding": {
     "step": "Step",

@@ -51,7 +51,8 @@
     "continueToReset": "Tiếp tục đặt lại",
     "enterEmailForReset": "Nhập email của bạn để nhận mã đặt lại",
     "sendResetCode": "Gửi mã đặt lại",
-    "backToSignIn": "Quay lại đăng nhập"
+    "backToSignIn": "Quay lại đăng nhập",
+    "signInWithGoogle": "Đăng nhập với Google"
   },
   "onboarding": {
     "step": "Bước",
