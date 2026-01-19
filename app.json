@@ -13,13 +13,15 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.whear.app"
+      "bundleIdentifier": "com.whear.app",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "package": "com.whear.app"
+      "package": "com.whear.app",
+      "versionCode": 1
     },
     "web": {},
     "plugins": [
@@ -35,7 +37,12 @@
           "locationAlwaysAndWhenInUsePermission": "The app uses your location to provide weather context for outfit suggestions."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
   }
 }
 
