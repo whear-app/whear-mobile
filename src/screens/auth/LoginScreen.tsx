@@ -42,8 +42,6 @@ export const LoginScreen: React.FC = () => {
   const {
     isReady: isGoogleReady,
     signInWithGoogle,
-    authorizationCode,
-    codeVerifier,
   } = useGoogleAuth();
 
   const loginSchema = createLoginSchema(t);
@@ -73,34 +71,6 @@ export const LoginScreen: React.FC = () => {
     [login, navigation, showSnackbar]
   );
 
-  // ✅ If you want to finish Google login in this screen:
-  // When hook returns authorizationCode + codeVerifier, call your API here.
-  // Replace this with your actual backend call.
-  useEffect(() => {
-    const run = async () => {
-      if (!authorizationCode || !codeVerifier) return;
-
-      try {
-        // Example: call backend to exchange code -> tokens -> create app session
-        // await loginWithGoogleCode({ authorizationCode, codeVerifier });
-
-        // For now, just notify so you know values are ready:
-        if (__DEV__) {
-          console.log("[LOGIN] ✅ Google code ready:", {
-            authorizationCode: `${authorizationCode.slice(0, 10)}...`,
-            codeVerifier: `${codeVerifier.slice(0, 10)}...`,
-          });
-        }
-
-        // After your backend login succeeds:
-        // navigation.navigate(ROUTES.ONBOARDING_FLOW);
-      } catch (e) {
-        showSnackbar((e as Error).message, "error");
-      }
-    };
-
-    run();
-  }, [authorizationCode, codeVerifier, showSnackbar]);
 
   const onPressGoogle = useCallback(async () => {
     try {
@@ -195,10 +165,10 @@ export const LoginScreen: React.FC = () => {
                   variant="glass"
                   onPress={onPressGoogle}
                   disabled={googleDisabled}
-                  // style={[
-                  //   styles.googleButton,
-                  //   googleDisabled ? styles.googleButtonDisabled : null,
-                  // ]}
+                // style={[
+                //   styles.googleButton,
+                //   googleDisabled ? styles.googleButtonDisabled : null,
+                // ]}
                 />
 
                 {/* Small helper text (optional) */}
