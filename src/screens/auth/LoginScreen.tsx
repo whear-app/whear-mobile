@@ -1,35 +1,48 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Text, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppButton, AppInput, GradientBackground, AppCard } from '../../components';
-import { ROUTES } from '../../constants/routes';
-import { AuthStackParamList } from '../../navigation/types';
-import { spacing as spacingConstants } from '../../constants/theme';
-import { useAuthStore } from '../../features/authStore';
-import { useProfileStore } from '../../features/profileStore';
-import { useSnackbar } from '../../hooks/useSnackbar';
-import { useTranslation } from 'react-i18next';
+import React, { useCallback, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useTranslation } from "react-i18next";
 
-const createLoginSchema = (t: any) => z.object({
-  email: z.string().email(t('auth.invalidEmail')),
-  password: z.string().min(1, t('auth.passwordRequired')),
-});
+import { useAppTheme } from "../../hooks/useAppTheme";
+import { AppButton, AppInput, GradientBackground, AppCard } from "../../components";
+import { ROUTES } from "../../constants/routes";
+import type { AuthStackParamList } from "../../navigation/types";
+import { spacing as spacingConstants } from "../../constants/theme";
+import { useAuthStore } from "../../features/authStore";
+import { useSnackbar } from "../../hooks/useSnackbar";
+import { useGoogleAuth } from "../../hooks/useGoogleAuth";
+
+const createLoginSchema = (t: any) =>
+  z.object({
+    email: z.string().email(t("auth.invalidEmail")),
+    password: z.string().min(1, t("auth.passwordRequired")),
+  });
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export const LoginScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
-  const { login, isLoading, user } = useAuthStore();
-  const { fetchProfile, profile } = useProfileStore();
+  const { login, isLoading } = useAuthStore();
   const { showSnackbar } = useSnackbar();
-  const { colors, spacing } = useAppTheme();
+  const { colors } = useAppTheme();
+
+  const {
+    isReady: isGoogleReady,
+    signInWithGoogle,
+  } = useGoogleAuth();
 
   const loginSchema = createLoginSchema(t);
   type FormData = z.infer<typeof loginSchema>;
@@ -41,40 +54,56 @@ export const LoginScreen: React.FC = () => {
   } = useForm<FormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: 'demo@whear.com',
-      password: 'demo123',
+      email: "demo@whear.com",
+      password: "demo123",
     },
   });
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = useCallback(
+    async (data: FormData) => {
+      try {
+        await login(data.email, data.password);
+        navigation.navigate(ROUTES.ONBOARDING_FLOW);
+      } catch (error) {
+        showSnackbar((error as Error).message, "error");
+      }
+    },
+    [login, navigation, showSnackbar]
+  );
+
+
+  const onPressGoogle = useCallback(async () => {
     try {
-      await login(data.email, data.password);
-      // After successful login, navigate to onboarding flow
-      // OnboardingFlowScreen will check if profile is complete and navigate accordingly
-      navigation.navigate(ROUTES.ONBOARDING_FLOW);
-    } catch (error) {
-      showSnackbar((error as Error).message, 'error');
+      if (!isGoogleReady) {
+        showSnackbar(t("auth.googleNotReady") || "Google login is not ready yet.", "error");
+        return;
+      }
+      await signInWithGoogle();
+    } catch (e) {
+      showSnackbar((e as Error).message, "error");
     }
-  };
+  }, [isGoogleReady, signInWithGoogle, showSnackbar, t]);
+
+  const googleDisabled = isLoading || !isGoogleReady;
 
   return (
     <GradientBackground>
       <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardView}
         >
-          <ScrollView 
+          <ScrollView
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.content}>
-              {/* Logo/Title */}
+              {/* Header */}
               <View style={styles.header}>
                 <Text style={[styles.logo, { color: colors.textPrimary }]}>Whear</Text>
                 <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                  {t('auth.signInToContinue')}
+                  {t("auth.signInToContinue")}
                 </Text>
               </View>
 
@@ -85,7 +114,7 @@ export const LoginScreen: React.FC = () => {
                   name="email"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <AppInput
-                      label={t('auth.email')}
+                      label={t("auth.email")}
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -102,7 +131,7 @@ export const LoginScreen: React.FC = () => {
                   name="password"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <AppInput
-                      label={t('auth.password')}
+                      label={t("auth.password")}
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -116,7 +145,7 @@ export const LoginScreen: React.FC = () => {
 
                 <View style={styles.forgotContainer}>
                   <AppButton
-                    label={t('auth.forgotPassword')}
+                    label={t("auth.forgotPassword")}
                     variant="ghost"
                     onPress={() => navigation.navigate(ROUTES.FORGOT_PASSWORD)}
                     style={styles.forgotButton}
@@ -124,20 +153,39 @@ export const LoginScreen: React.FC = () => {
                 </View>
 
                 <AppButton
-                  label={t('auth.signIn')}
+                  label={t("auth.signIn")}
                   onPress={handleSubmit(onSubmit)}
                   loading={isLoading}
                   style={styles.loginButton}
                 />
+
+                {/* Google Sign In */}
+                <AppButton
+                  label={t("auth.signInWithGoogle")}
+                  variant="glass"
+                  onPress={onPressGoogle}
+                  disabled={googleDisabled}
+                // style={[
+                //   styles.googleButton,
+                //   googleDisabled ? styles.googleButtonDisabled : null,
+                // ]}
+                />
+
+                {/* Small helper text (optional) */}
+                {!isGoogleReady ? (
+                  <Text style={[styles.helperText, { color: colors.textSecondary }]}>
+                    {t("auth.googleLoading") || "Google sign-in is initializing..."}
+                  </Text>
+                ) : null}
               </AppCard>
 
-              {/* Sign Up Link */}
+              {/* Sign Up */}
               <View style={styles.signupContainer}>
                 <Text style={[styles.signupText, { color: colors.textSecondary }]}>
-                  {t('auth.dontHaveAccount')}{' '}
+                  {t("auth.dontHaveAccount")}{" "}
                 </Text>
                 <AppButton
-                  label={t('auth.signUp')}
+                  label={t("auth.signUp")}
                   variant="ghost"
                   onPress={() => navigation.navigate(ROUTES.REGISTER)}
                   style={styles.signupLink}
@@ -160,46 +208,58 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: spacingConstants.lg,
   },
   content: {
-    width: '100%',
+    width: "100%",
     maxWidth: 400,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: spacingConstants.xl * 2,
   },
   logo: {
     fontSize: 48,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: -1,
     marginBottom: spacingConstants.sm,
   },
   subtitle: {
     fontSize: 16,
+    textAlign: "center",
   },
   formCard: {
     padding: spacingConstants.lg,
     marginBottom: spacingConstants.xl,
   },
   forgotContainer: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     marginTop: -spacingConstants.sm,
     marginBottom: spacingConstants.md,
   },
   forgotButton: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
   },
   loginButton: {
     marginTop: spacingConstants.md,
   },
+  googleButton: {
+    marginTop: spacingConstants.md,
+  },
+  googleButtonDisabled: {
+    opacity: 0.6,
+  },
+  helperText: {
+    marginTop: spacingConstants.sm,
+    fontSize: 12,
+    textAlign: "center",
+  },
   signupContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: spacingConstants.xl,
   },
   signupText: {
@@ -210,4 +270,4 @@ const styles = StyleSheet.create({
   },
 });
 
-LoginScreen.displayName = 'LoginScreen';
+LoginScreen.displayName = "LoginScreen";

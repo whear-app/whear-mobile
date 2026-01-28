@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../models';
-import { authService } from '../services/authService';
+import { authService, GoogleUserProfile } from '../services/authService';
 
 interface AuthState {
   user: User | null;
@@ -10,6 +10,7 @@ interface AuthState {
   isLoading: boolean;
   justLoggedIn: boolean; // Flag to track if user just logged in (not persisted)
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (googleUser: GoogleUserProfile) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -27,6 +28,16 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const response = await authService.login(email, password);
+          set({ user: response.data, isAuthenticated: true, isLoading: false, justLoggedIn: true });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+      loginWithGoogle: async (googleUser: GoogleUserProfile) => {
+        set({ isLoading: true });
+        try {
+          const response = await authService.loginWithGoogle(googleUser);
           set({ user: response.data, isAuthenticated: true, isLoading: false, justLoggedIn: true });
         } catch (error) {
           set({ isLoading: false });
@@ -71,7 +82,3 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
-
-
-
-

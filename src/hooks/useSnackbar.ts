@@ -9,10 +9,9 @@ export const setSnackbarRef = (ref: Snackbar | null) => {
 
 export const useSnackbar = () => {
   const showSnackbar = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    if (snackbarRef) {
-      // This is a simplified version - in a real app you'd use a proper snackbar context
-      console.log(`[${type.toUpperCase()}] ${message}`);
-    }
+    // Always log so devs can see errors even if snackbar UI isn't wired up yet.
+    // (snackbarRef is currently not mounted in this app.)
+    console.log(`[${type.toUpperCase()}] ${message}`);
   }, []);
 
   return { showSnackbar };
